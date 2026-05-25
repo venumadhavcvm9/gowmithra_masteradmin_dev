@@ -1,0 +1,20 @@
+/* Layout container */
+.layout {
+  display: flex;
+  height: 100vh;
+}
+
+/* Right side */
+.layout-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Content area */
+.layout-content {
+  flex: 1;
+  overflow-y: auto;
+  background: #F4F8FB;
+  padding: 20px;
+}

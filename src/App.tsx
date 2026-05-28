@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Dashboard from "./pages/dashboard/Dashboard";
 import AdminLayout from "./layouts/AdminLayout";
 
+
 export default function App() {
   return (
     <BrowserRouter>

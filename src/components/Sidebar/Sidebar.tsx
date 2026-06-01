@@ -111,7 +111,7 @@ export default function Sidebar() {
             </div>
 
             <div className="version">
-              Version 1.0.0
+              Version 1.0.1
             </div>
           </>
         )}

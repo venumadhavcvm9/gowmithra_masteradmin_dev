@@ -1,35 +1,29 @@
 // src/components/Header/Header.tsx
 
-import "./Header.css";
-import {
-  FiSearch,
-  FiBell,
-  FiLogOut,
-} from "react-icons/fi";
+import "./header.css";
+import SearchBox from "./components/SearchBox";
+import NotificationsDropdown from "./components/NotificationsDropdown";
+import UserProfile from "./components/UserProfile";
+import LogoutButton from "./components/LogoutButton";
 
 export default function Header() {
   return (
     <header className="header">
-      <div className="header-left">
-        <div className="search-box">
-          <FiSearch className="search-icon" />
+      {/* SEARCH BOX */}
+      <SearchBox />
 
-          <input
-            type="text"
-            placeholder="Search medicines, doctors, vendors..."
-          />
-        </div>
-      </div>
-
+      {/* RIGHT ACTIONS */}
       <div className="header-right">
-        <button className="notification-btn">
-          <FiBell />
-          <span className="notification-dot"></span>
-        </button>
-        <button className="logout-btn">
-          <FiLogOut />
-          Logout
-        </button>
+        {/* NOTIFICATIONS DROPDOWN */}
+        <NotificationsDropdown />
+
+        {/* PROFILE SECTION */}
+        <UserProfile />
+
+        <div className="divider-vertical"></div>
+
+        {/* LOGOUT */}
+        <LogoutButton />
       </div>
     </header>
   );

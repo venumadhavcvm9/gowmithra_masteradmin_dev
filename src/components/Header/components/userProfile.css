@@ -1,0 +1,45 @@
+/* USER PROFILE SECTION */
+.user-profile-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 12px;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+.user-profile-section:hover {
+  background: var(--bg-app);
+}
+
+.avatar-img {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  object-fit: cover;
+  border: 1px solid var(--border-color);
+}
+
+.profile-info-block {
+  text-align: left;
+}
+
+.profile-info-block h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-main);
+  margin: 0;
+}
+
+.role-badge {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-muted);
+}
+
+.chevron-down {
+  color: var(--text-light);
+  font-size: 14px;
+  margin-left: 2px;
+}

@@ -1,3 +1,104 @@
+/* src/App.css */
+
+/* ─── Info Screen (shared by Placeholder + AccessDenied) ─────────
+   Centered full-height card used for placeholder and error pages.
+──────────────────────────────────────────────────────────────────── */
+
+.info-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 75vh;
+  margin: 40px;
+  padding: 60px 40px;
+  background: #ffffff;
+  border: 1px solid var(--border-color);
+  border-radius: 24px;
+  box-shadow: var(--shadow-sm);
+}
+
+.info-screen h1 {
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--secondary);
+  font-family: var(--font-sans);
+  margin: 0 0 12px;
+}
+
+.info-screen p {
+  max-width: 480px;
+  font-size: 14px;
+  line-height: 1.6;
+  color: var(--text-muted);
+  margin: 0 0 32px;
+}
+
+/* Icon circle */
+.info-screen__icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  margin-bottom: 24px;
+  background: var(--primary-glow);
+  color: var(--primary);
+}
+
+.info-screen__icon--danger {
+  background: rgba(244, 63, 94, 0.1);
+  color: var(--accent-rose);
+}
+
+/* Button row */
+.info-screen__actions {
+  display: flex;
+  gap: 16px;
+}
+
+.info-screen__btn {
+  height: 44px;
+  padding: 0 24px;
+  background: var(--primary);
+  color: #ffffff;
+  border: none;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 4px 12px var(--primary-glow);
+  transition: background var(--transition-normal), transform var(--transition-normal);
+}
+
+.info-screen__btn:hover {
+  background: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.info-screen__btn--outline {
+  background: #ffffff;
+  color: var(--accent-rose);
+  border: 1px solid var(--border-color);
+  box-shadow: none;
+}
+
+.info-screen__btn--outline:hover {
+  background: rgba(244, 63, 94, 0.05);
+  transform: translateY(-1px);
+}
+
+
+/* ─── Existing App.css (Vite default styles) ─────────────────────
+   Styles below are from the original Vite scaffold — kept as-is.
+──────────────────────────────────────────────────────────────────── */
+
 .counter {
   font-size: 16px;
   padding: 5px 10px;
@@ -11,6 +112,7 @@
   &:hover {
     border-color: var(--accent-border);
   }
+
   &:focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 2px;
@@ -42,8 +144,7 @@
     z-index: 1;
     top: 34px;
     height: 28px;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg)
-      scale(1.4);
+    transform: perspective(2000px) rotateZ(300deg) rotateX(44deg) rotateY(39deg) scale(1.4);
   }
 
   .vite {
@@ -51,8 +152,7 @@
     top: 107px;
     height: 26px;
     width: auto;
-    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg)
-      scale(0.8);
+    transform: perspective(2000px) rotateZ(300deg) rotateX(40deg) rotateY(39deg) scale(0.8);
   }
 }
 
@@ -75,9 +175,10 @@
   border-top: 1px solid var(--border);
   text-align: left;
 
-  & > div {
+  &>div {
     flex: 1 1 0;
     padding: 32px;
+
     @media (max-width: 1024px) {
       padding: 24px 20px;
     }
@@ -130,6 +231,7 @@
     &:hover {
       box-shadow: var(--shadow);
     }
+
     .button-icon {
       height: 18px;
       width: 18px;
@@ -156,6 +258,7 @@
 #spacer {
   height: 88px;
   border-top: 1px solid var(--border);
+
   @media (max-width: 1024px) {
     height: 48px;
   }
@@ -177,6 +280,7 @@
     left: 0;
     border-left-color: var(--border);
   }
+
   &::after {
     right: 0;
     border-right-color: var(--border);

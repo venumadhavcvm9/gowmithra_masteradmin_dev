@@ -1,25 +1,25 @@
 import API from "../../services/api";
 
-// Example APIs (you can connect real backend later)
-export const getDashboardCounts = async () => {
-  // replace with your backend API
-  // return API.get("/dashboard");
-
-  return {
-    vendors: 25,
-    doctors: 40,
-    users: 1200,
-    sales: "₹2.4L"
-  };
+// 🔹 Get Admin Dashboard Stats: GET /api/admin/dashboard/stats
+export const getAdminDashboardStats = async () => {
+  const res = await API.get("/admin/dashboard/stats");
+  return res.data;
 };
 
-export const getDashboardData = async () => {
+// 🔹 Get Public Dashboard Stats: GET /api/dashboard
+export const getPublicDashboardStats = async () => {
   const res = await API.get("/dashboard");
   return res.data;
 };
-export const getSalesData = async () => {
-  return [
-    { month: "Jan", sales: 400 },
-    { month: "Feb", sales: 800 }
-  ];
+
+// 🔹 Get All Area Doctors: GET /api/admin/area-doctors
+export const getDashboardDoctors = async () => {
+  const res = await API.get("/admin/area-doctors");
+  return res.data;
+};
+
+// 🔹 Get All Users/Farmers: GET /api/admin/users
+export const getDashboardUsers = async () => {
+  const res = await API.get("/admin/users");
+  return res.data;
 };

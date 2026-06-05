@@ -1,0 +1,22 @@
+/* LOGOUT */
+.logout-action-btn {
+  height: 44px;
+  padding: 0 16px;
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  background: #ffffff;
+  color: var(--text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.logout-action-btn:hover {
+  background: rgba(244, 63, 94, 0.05);
+  color: var(--accent-rose);
+  border-color: rgba(244, 63, 94, 0.2);
+}

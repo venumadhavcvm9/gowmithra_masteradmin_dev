@@ -1,187 +1,121 @@
 // src/pages/dashboard/Dashboard.tsx
 
-import "./Dashboard.css";
+import "./dashboard.css";
+import { useEffect, useState } from "react";
+import { FaFileExport } from "react-icons/fa";
+import { toast, Toaster } from "react-hot-toast";
 import {
-  FaUsers,
-  FaUserMd,
-  FaClinicMedical,
-  FaCapsules,
-  FaArrowUp,
-} from "react-icons/fa";
+  getAdminDashboardStats,
+  getPublicDashboardStats,
+  getDashboardDoctors,
+  getDashboardUsers
+} from "./dashboard.service";
+import DashboardStats from "./components/DashboardStats";
+import DashboardCharts from "./components/DashboardCharts";
+import RecentFarmersTable from "./components/RecentFarmersTable";
+import BestSellersAndDoctors from "./components/BestSellersAndDoctors";
 
 export default function Dashboard() {
-  const stats = [
-    {
-      title: "Total Users",
-      value: "12,540",
-      icon: <FaUsers />,
-      growth: "+12%",
-    },
-    {
-      title: "Area Doctors",
-      value: "248",
-      icon: <FaUserMd />,
-      growth: "+8%",
-    },
-    {
-      title: "Vendors",
-      value: "86",
-      icon: <FaClinicMedical />,
-      growth: "+5%",
-    },
-    {
-      title: "Medicines",
-      value: "1,240",
-      icon: <FaCapsules />,
-      growth: "+18%",
-    },
-  ];
+  const [farmersCount, setFarmersCount] = useState(0);
+  const [doctorsCount, setDoctorsCount] = useState(0);
+  const [vendorsCount, setVendorsCount] = useState(0);
+  const catalogCount = 120; // standard medicine category size placeholder
+
+  const [doctors, setDoctors] = useState<any[]>([]);
+  const [farmers, setFarmers] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    loadDashboardData();
+  }, []);
+
+  const loadDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      // 1. Fetch main admin metrics counts
+      const adminStatsRes = await getAdminDashboardStats();
+      if (adminStatsRes && adminStatsRes.data) {
+        setFarmersCount(adminStatsRes.data.usersCount || 0);
+        setDoctorsCount(adminStatsRes.data.doctorsCount || 0);
+      }
+
+      // 2. Fetch public counts to get vendors count
+      try {
+        const publicStats = await getPublicDashboardStats();
+        if (publicStats) {
+          setVendorsCount(publicStats.vendors || 0);
+          if (publicStats.users) setFarmersCount(publicStats.users);
+          if (publicStats.doctors) setDoctorsCount(publicStats.doctors);
+        }
+      } catch (err) {
+        console.warn("Public dashboard statistics service offline.", err);
+      }
+
+      // 3. Fetch star doctors list
+      const doctorsListRes = await getDashboardDoctors();
+      if (doctorsListRes && doctorsListRes.data) {
+        setDoctors(doctorsListRes.data);
+      }
+
+      // 4. Fetch registered farmers
+      const farmersListRes = await getDashboardUsers();
+      if (farmersListRes && farmersListRes.data) {
+        setFarmers(farmersListRes.data);
+      }
+    } catch (error: any) {
+      console.error("Dashboard backend loader failure:", error);
+      toast.error("Failed to retrieve live operations statistics from backend.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="dashboard-page">
-      {/* TOP HEADER */}
+      <Toaster position="top-right" />
+
+      {/* HEADER SECTION */}
       <div className="dashboard-top">
         <div>
-          <h1>Veterinary Dashboard</h1>
-          <p>Welcome back to GowMithra Admin Panel</p>
+          <h1 className="text-gradient">Veterinary Operations Hub</h1>
+          <p>Real-time analytics and livestock healthcare distribution controls.</p>
         </div>
 
-        <button className="export-btn">Export Report</button>
-      </div>
-
-      {/* STATS CARDS */}
-      <div className="stats-grid">
-        {stats.map((item, index) => (
-          <div className="stat-card" key={index}>
-            <div className="stat-icon">{item.icon}</div>
-
-            <div className="stat-content">
-              <h3>{item.title}</h3>
-              <h2>{item.value}</h2>
-
-              <div className="growth">
-                <FaArrowUp />
-                <span>{item.growth} this month</span>
-              </div>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* CHART + TABLE */}
-      <div className="dashboard-row">
-        {/* SALES CHART */}
-        <div className="chart-card">
-          <div className="card-header">
-            <h2>Sales Overview</h2>
-            <select>
-              <option>Monthly</option>
-              <option>Weekly</option>
-            </select>
-          </div>
-
-          <div className="fake-chart">
-            <div className="bar bar1"></div>
-            <div className="bar bar2"></div>
-            <div className="bar bar3"></div>
-            <div className="bar bar4"></div>
-            <div className="bar bar5"></div>
-            <div className="bar bar6"></div>
-          </div>
-        </div>
-
-        {/* RECENT ORDERS */}
-        <div className="table-card">
-          <div className="card-header">
-            <h2>Recent Orders</h2>
-          </div>
-
-          <table>
-            <thead>
-              <tr>
-                <th>Order ID</th>
-                <th>User</th>
-                <th>Status</th>
-                <th>Amount</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              <tr>
-                <td>#ORD001</td>
-                <td>Ramesh</td>
-                <td>
-                  <span className="status delivered">Delivered</span>
-                </td>
-                <td>₹2,450</td>
-              </tr>
-
-              <tr>
-                <td>#ORD002</td>
-                <td>Suresh</td>
-                <td>
-                  <span className="status pending">Pending</span>
-                </td>
-                <td>₹1,250</td>
-              </tr>
-
-              <tr>
-                <td>#ORD003</td>
-                <td>Mahesh</td>
-                <td>
-                  <span className="status cancelled">Cancelled</span>
-                </td>
-                <td>₹980</td>
-              </tr>
-
-              <tr>
-                <td>#ORD004</td>
-                <td>Kiran</td>
-                <td>
-                  <span className="status delivered">Delivered</span>
-                </td>
-                <td>₹3,850</td>
-              </tr>
-            </tbody>
-          </table>
+        <div className="top-action-group">
+          <button className="new-btn" aria-label="Add New Asset" onClick={loadDashboardData}>
+            <span>Refresh Stats</span>
+          </button>
+          <button className="export-btn" aria-label="Export Reports">
+            <FaFileExport />
+            <span>Export Report</span>
+          </button>
         </div>
       </div>
 
-      {/* BOTTOM CARDS */}
-      <div className="bottom-grid">
-        <div className="bottom-card">
-          <h2>Top Selling Medicines</h2>
-
-          <ul>
-            <li>Vitamin Syrup</li>
-            <li>Deworming Powder</li>
-            <li>Feed Booster</li>
-            <li>Calcium Tonic</li>
-          </ul>
+      {isLoading ? (
+        <div style={{ padding: "80px", textAlign: "center", fontWeight: 600, color: "var(--text-muted)" }}>
+          Synchronizing with Admin database services...
         </div>
+      ) : (
+        <>
+          {/* STATS GRID */}
+          <DashboardStats
+            farmersCount={farmersCount}
+            doctorsCount={doctorsCount}
+            vendorsCount={vendorsCount}
+            catalogCount={catalogCount}
+          />
 
-        <div className="bottom-card">
-          <h2>Top Area Doctors</h2>
+          {/* CHARTS CONTAINER SECTION */}
+          <DashboardCharts />
 
-          <ul>
-            <li>Dr. Ramesh</li>
-            <li>Dr. Karthik</li>
-            <li>Dr. Suresh</li>
-            <li>Dr. Mahesh</li>
-          </ul>
-        </div>
+          {/* RECENT FARMERS TABLE ROW */}
+          <RecentFarmersTable farmers={farmers} />
 
-        <div className="bottom-card">
-          <h2>Notifications</h2>
-
-          <ul>
-            <li>15 New Orders Received</li>
-            <li>New Vendor Registration</li>
-            <li>Medicine Stock Low</li>
-            <li>Doctor Commission Updated</li>
-          </ul>
-        </div>
-      </div>
+          {/* BOTTOM ANALYSIS SECTION */}
+          <BestSellersAndDoctors doctors={doctors} />
+        </>
+      )}
     </div>
   );
 }

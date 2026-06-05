@@ -1,88 +1,24 @@
 // src/components/Sidebar/Sidebar.tsx
 
 import "./sidebar.css";
-import {
-  FaHome,
-  FaUsers,
-  FaUserMd,
-  FaChartLine,
-  FaCapsules,
-  FaChevronLeft,
-  FaChevronRight,
-  FaClipboardList,
-  FaClinicMedical,
-} from "react-icons/fa";
-
 import { useState } from "react";
 import { NavLink } from "react-router-dom";
+import { hasAccess } from "../../services/auth";
+import { menus } from "./sidebarConfig";
+import BrandHeader from "./components/BrandHeader";
+// import SupportCard from "./components/SupportCard";
 
 export default function Sidebar() {
   const [collapsed, setCollapsed] = useState(false);
 
-  const menus = [
-    {
-      name: "Dashboard",
-      icon: <FaHome />,
-      path: "/dashboard",
-    },
-    {
-      name: "Sales",
-      icon: <FaChartLine />,
-      path: "/sales",
-    },
-    {
-      name: "Users",
-      icon: <FaUsers />,
-      path: "/users",
-    },
-    {
-      name: "Area Doctors",
-      icon: <FaUserMd />,
-      path: "/area-doctors",
-    },
-    {
-      name: "Medicines",
-      icon: <FaCapsules />,
-      path: "/medicines",
-    },
-    {
-      name: "Orders",
-      icon: <FaClipboardList />,
-      path: "/orders",
-    },
-    {
-      name: "Vendors",
-      icon: <FaClinicMedical />,
-      path: "/vendors",
-    },
-  ];
-
   return (
     <div className={`sidebar ${collapsed ? "collapsed" : ""}`}>
-      {/* TOP */}
-      <div className="sidebar-top">
-        {!collapsed && (
-          <div className="brand">
-            <div className="brand-logo">🐄</div>
-
-            <div>
-              <h2>GowMithra</h2>
-              <p>Veterinary ERP</p>
-            </div>
-          </div>
-        )}
-
-        <button
-          className="toggle-btn"
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          {collapsed ? <FaChevronRight /> : <FaChevronLeft />}
-        </button>
-      </div>
+      {/* BRAND & TOGGLE */}
+      <BrandHeader collapsed={collapsed} setCollapsed={setCollapsed} />
 
       {/* MENU */}
       <div className="sidebar-menu">
-        {menus.map((menu, index) => (
+        {menus.filter((menu) => hasAccess(menu.path)).map((menu, index) => (
           <NavLink
             key={index}
             to={menu.path}
@@ -95,27 +31,16 @@ export default function Sidebar() {
             {!collapsed && (
               <span className="menu-text">{menu.name}</span>
             )}
+
+            {collapsed && (
+              <div className="tooltip">{menu.name}</div>
+            )}
           </NavLink>
         ))}
       </div>
 
-      {/* BOTTOM */}
-      <div className="sidebar-bottom">
-        {!collapsed && (
-          <>
-            <div className="support-card">
-              <h4>Need Help?</h4>
-              <p>Veterinary support available 24/7</p>
-
-              <button>Contact Support</button>
-            </div>
-
-            <div className="version">
-              Version 1.0.1
-            </div>
-          </>
-        )}
-      </div>
+      {/* SUPPORT & VERSION */}
+      {/* <SupportCard collapsed={collapsed} /> */}
     </div>
   );
 }

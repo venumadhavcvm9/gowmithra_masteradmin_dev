@@ -9,9 +9,11 @@ import Team from "./pages/team/Team";
 import Login from "./pages/login/Login";
 import Medicines from "./pages/medicines/Medicines";
 import Orders from "./pages/orders/Orders";
+import Settlements from "./pages/settlements/Settlements";
+import Stores from "./pages/stores/Stores";
 import AdminLayout from "./layouts/AdminLayout";
 import { isAuthenticated, hasAccess, logoutUser, getPrimaryLandingPath, getCurrentUser } from "./services/auth";
-import { FaClinicMedical, FaExclamationTriangle, FaSignOutAlt } from "react-icons/fa";
+import { FaClinicMedical, FaExclamationTriangle, FaSignOutAlt, FaStore } from "react-icons/fa";
 import "./App.css";
 
 // ─── Placeholder (unimplemented pages) ───────────────────────────
@@ -106,6 +108,8 @@ export default function App() {
                   {/* Dynamic catalog and order modules */}
                   <Route path="/medicines" element={<Medicines />} />
                   <Route path="/orders" element={<Orders />} />
+                  <Route path="/pharmacy-settlements" element={<Settlements />} />
+                  <Route path="/stores" element={<Stores />} />
                   <Route path="/vendors" element={
                     <OperationalPlaceholder
                       icon={<FaClinicMedical />}

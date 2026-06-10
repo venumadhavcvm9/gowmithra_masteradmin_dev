@@ -20,13 +20,17 @@ const rolePermissions: Record<string, string[]> = {
 };
 
 // 🔹 Login Operation: Cache details
-export const loginUser = (user: AuthUser) => {
+export const loginUser = (user: AuthUser, token?: string) => {
   localStorage.setItem("user", JSON.stringify(user));
+  if (token) {
+    localStorage.setItem("token", token);
+  }
 };
 
 // 🔹 Logout Operation: Clear cache
 export const logoutUser = () => {
   localStorage.removeItem("user");
+  localStorage.removeItem("token");
 };
 
 // 🔹 Check Authentication State

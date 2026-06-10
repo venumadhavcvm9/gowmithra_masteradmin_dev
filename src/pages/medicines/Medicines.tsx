@@ -35,16 +35,34 @@ const MEDICINE_TYPES: MedicineType[] = [
   "FEED_ADDITIVE",
 ];
 
+const MEDICINE_CATEGORIES = [
+  "Supplements",
+  "First Aid",
+  "Feed additives",
+];
+
+const MEDICINE_SUB_CATEGORIES = [
+  "Powder",
+  "injection",
+  "tablet",
+  "syrup",
+];
+
 export default function Medicines() {
   const [medicines, setMedicines] = useState<Medicine[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("All");
   const [typeFilter, setTypeFilter] = useState("All");
   const [statusFilter, setStatusFilter] = useState("All");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
+  const [limit, setLimit] = useState(10);
 
   const currentUser = getCurrentUser();
-  const canManage = currentUser?.role === "STOCK";
+  const canManage = ["STOCK", "ADMIN", "MASTER_ADMIN"].includes(currentUser?.role || "");
 
   // Modal states
   const [showAddModal, setShowAddModal] = useState(false);
@@ -66,15 +84,33 @@ export default function Medicines() {
   const [formShowToShops, setFormShowToShops] = useState(true);
   const [formShowToVendors, setFormShowToVendors] = useState(true);
 
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      setCurrentPage(1);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [search]);
+
   useEffect(() => {
     loadMedicines();
-  }, []);
+  }, [currentPage, limit, debouncedSearch, categoryFilter, typeFilter, statusFilter]);
 
   const loadMedicines = () => {
     setIsLoading(true);
-    getMedicines()
+    getMedicines({
+      page: currentPage,
+      limit,
+      search: debouncedSearch,
+      category: categoryFilter !== "All" ? categoryFilter : undefined,
+      type: typeFilter !== "All" ? typeFilter : undefined,
+      status: statusFilter !== "All" ? statusFilter : undefined
+    })
       .then((res) => {
         setMedicines(res.data);
+        setTotalPages(res.meta.totalPages);
+        setTotalItems(res.meta.totalItems);
       })
       .catch((err) => {
         console.error(err);
@@ -212,30 +248,11 @@ export default function Medicines() {
       });
   };
 
-  // Filters logic
-  const filteredMedicines = medicines.filter((med) => {
-    const matchesSearch =
-      med.name.toLowerCase().includes(search.toLowerCase()) ||
-      med.medicine_id.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory =
-      categoryFilter === "All" || med.category.toLowerCase() === categoryFilter.toLowerCase();
-    const matchesType = typeFilter === "All" || med.type === typeFilter;
-    const matchesStatus =
-      statusFilter === "All" ||
-      (statusFilter === "Active" && med.is_active) ||
-      (statusFilter === "Inactive" && !med.is_active);
+  // Extract unique categories for filter list is removed because pagination breaks it.
+  // We will change the category dropdown to a text input.
 
-    return matchesSearch && matchesCategory && matchesType && matchesStatus;
-  });
-
-  // Extract unique categories for filter list
-  const categoriesList = Array.from(new Set(medicines.map((m) => m.category)));
-
-  // Analytics helper metrics
-  const totalCatalog = medicines.length;
-  const activeCount = medicines.filter((m) => m.is_active).length;
-  const prescriptionCount = medicines.filter((m) => m.requires_prescription).length;
-  const supplementsCount = medicines.filter((m) => m.type === "SUPPLEMENT").length;
+  // Analytics helper metrics (Server provides totalItems)
+  const totalCatalog = totalItems;
 
   return (
     <div className="medicines-page">
@@ -244,7 +261,7 @@ export default function Medicines() {
       {/* HEADER SECTION */}
       <div className="medicines-top-bar">
         <div>
-          <h1 className="text-gradient">Medicines & Catalog Controls</h1>
+          <h1 className="text-gradient">Catalog Health</h1>
           <p>
             {canManage
               ? "Onboard products, adjust batch info, and set prescription triggers."
@@ -259,60 +276,7 @@ export default function Medicines() {
         )}
       </div>
 
-      {/* BANNER FOR NON-STOCK */}
-      {!canManage && (
-        <div
-          className="glass-panel"
-          style={{
-            padding: "16px 20px",
-            borderRadius: "12px",
-            borderLeft: "4px solid var(--accent-amber)",
-            display: "flex",
-            alignItems: "center",
-            gap: "12px",
-          }}
-        >
-          <FaExclamationTriangle style={{ color: "var(--accent-amber)", fontSize: "20px" }} />
-          <div>
-            <strong style={{ color: "var(--secondary)", fontSize: "14px" }}>Read-Only View Enabled</strong>
-            <p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--text-muted)" }}>
-              Your account role (<strong>{currentUser?.role}</strong>) does not have privileges to
-              modify inventory. Product registration, active toggles, and price edits are locked to the{" "}
-              <strong>STOCK</strong> role.
-            </p>
-          </div>
-        </div>
-      )}
 
-      {/* METRICS CARD */}
-      <div className="medicines-metrics">
-        <div className="med-metric-box glass-panel">
-          <span className="med-metric-title">Catalog Size</span>
-          <h2>
-            {totalCatalog} <FaBoxes className="inline-icon" />
-          </h2>
-          <span className="med-metric-sub text-up">{activeCount} Currently Active</span>
-        </div>
-        <div className="med-metric-box glass-panel">
-          <span className="med-metric-title">Prescription Checked</span>
-          <h2>{prescriptionCount} Products</h2>
-          <span className="med-metric-sub" style={{ color: "var(--accent-rose)" }}>
-            Requires doctor verification
-          </span>
-        </div>
-        <div className="med-metric-box glass-panel">
-          <span className="med-metric-title">Nutritional Supplements</span>
-          <h2>{supplementsCount} Feeds</h2>
-          <span className="med-metric-sub" style={{ color: "var(--accent-blue)" }}>
-            Boosters and bulk calcium
-          </span>
-        </div>
-        <div className="med-metric-box glass-panel">
-          <span className="med-metric-title">Catalog Health</span>
-          <h2>100%</h2>
-          <span className="med-metric-sub text-up">All expiries monitored</span>
-        </div>
-      </div>
 
       {/* CONTROLS PANELS */}
       <div className="medicines-controls glass-panel">
@@ -328,9 +292,9 @@ export default function Medicines() {
 
         <div className="filters-group">
           <div className="filter-select">
-            <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
+            <select value={categoryFilter} onChange={(e) => { setCategoryFilter(e.target.value); setCurrentPage(1); }}>
               <option value="All">All Categories</option>
-              {categoriesList.map((cat, idx) => (
+              {MEDICINE_CATEGORIES.map((cat, idx) => (
                 <option key={idx} value={cat}>
                   {cat}
                 </option>
@@ -339,7 +303,7 @@ export default function Medicines() {
           </div>
 
           <div className="filter-select">
-            <select value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
+            <select value={typeFilter} onChange={(e) => { setTypeFilter(e.target.value); setCurrentPage(1); }}>
               <option value="All">All Types</option>
               {MEDICINE_TYPES.map((t, idx) => (
                 <option key={idx} value={t}>
@@ -350,7 +314,7 @@ export default function Medicines() {
           </div>
 
           <div className="filter-select">
-            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)}>
+            <select value={statusFilter} onChange={(e) => { setStatusFilter(e.target.value); setCurrentPage(1); }}>
               <option value="All">All Statuses</option>
               <option value="Active">Active</option>
               <option value="Inactive">Inactive</option>
@@ -362,7 +326,7 @@ export default function Medicines() {
       {/* MEDICINES LIST GRID */}
       {isLoading ? (
         <div className="table-loading">Querying Inventory Registers...</div>
-      ) : filteredMedicines.length === 0 ? (
+      ) : medicines.length === 0 ? (
         <div
           className="glass-panel"
           style={{ padding: "40px", textAlign: "center", color: "var(--text-muted)" }}
@@ -370,88 +334,135 @@ export default function Medicines() {
           No medicines found matching selected filters.
         </div>
       ) : (
-        <div className="medicines-grid">
-          {filteredMedicines.map((med) => (
-            <div
-              className={`medicine-card glass-panel card-hover-effect ${!med.is_active ? "inactive" : ""}`}
-              key={med.id}
-            >
-              <div className="medicine-card-header">
-                <div className="med-thumbnail-wrapper">
-                  {med.thumbnail ? (
-                    <img src={med.thumbnail} alt={med.name} className="med-thumbnail" />
-                  ) : (
-                    <FaCapsules className="med-placeholder-icon" />
-                  )}
-                </div>
-                <div className="med-info-block">
-                  <h3>{med.name}</h3>
-                  <span className="med-id">{med.medicine_id}</span>
-                  {med.requires_prescription && (
-                    <span className="prescription-badge">Prescription Rx</span>
-                  )}
-                </div>
-              </div>
-
-              <div className="med-details-grid">
-                <div>
-                  <span>Category</span>
-                  <strong>{med.category || "N/A"}</strong>
-                </div>
-                <div>
-                  <span>Sub-category</span>
-                  <strong>{med.sub_category || "N/A"}</strong>
-                </div>
-                <div>
-                  <span>Batch No.</span>
-                  <strong>{med.batch_number || "N/A"}</strong>
-                </div>
-                <div>
-                  <span>Type</span>
-                  <strong>{med.type ? med.type.replace(/_/g, " ") : "N/A"}</strong>
-                </div>
-                <div>
-                  <span>Mfg Date</span>
-                  <strong>{med.mfg_date ? med.mfg_date.split("T")[0] : "N/A"}</strong>
-                </div>
-                <div>
-                  <span>Expiry Date</span>
-                  <strong>{med.exp_date ? med.exp_date.split("T")[0] : "N/A"}</strong>
-                </div>
-              </div>
-
-              <div className="med-price-row">
-                <div className="med-price">
-                  <span>PRICE</span>
-                  <strong>₹{med.price.toFixed(2)}</strong>
-                </div>
-
-                <div className="med-actions">
-                  {/* Status Toggle Switch */}
-                  <div className="switch-container" onClick={() => handleToggleStatus(med)}>
-                    <span className={`switch-label ${med.is_active ? "active" : ""}`}>
+        <div className="table-responsive glass-panel">
+          <table>
+            <thead>
+              <tr>
+                <th>Product</th>
+                <th>Category</th>
+                <th>Type</th>
+                <th>Batch & Dates</th>
+                <th>Price</th>
+                <th>Status</th>
+                {canManage && <th>Actions</th>}
+              </tr>
+            </thead>
+            <tbody>
+              {medicines.map((med) => (
+                <tr key={med.id}>
+                  <td>
+                    <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                      {med.thumbnail ? (
+                        <img src={med.thumbnail} alt={med.name} style={{ width: "40px", height: "40px", borderRadius: "8px", objectFit: "cover" }} />
+                      ) : (
+                        <div style={{ width: "40px", height: "40px", borderRadius: "8px", background: "var(--card-bg)", border: "1px solid var(--border)", display: "flex", alignItems: "center", justifyContent: "center" }}>
+                          <FaCapsules style={{ fontSize: "20px", color: "var(--accent-blue)" }} />
+                        </div>
+                      )}
+                      <div>
+                        <strong style={{ display: "block" }}>{med.name}</strong>
+                        <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{med.medicine_id}</span>
+                        {med.requires_prescription && (
+                          <span style={{ display: "inline-block", fontSize: "10px", backgroundColor: "var(--accent-rose)", color: "#fff", padding: "2px 6px", borderRadius: "4px", marginLeft: "6px" }}>Rx</span>
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td>
+                    <span style={{ display: "block", fontSize: "14px" }}>{med.category || "N/A"}</span>
+                    <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{med.sub_category || "N/A"}</span>
+                  </td>
+                  <td>
+                    {med.type ? med.type.replace(/_/g, " ") : "N/A"}
+                  </td>
+                  <td>
+                    <span style={{ display: "block", fontSize: "13px" }}>Batch: {med.batch_number || "N/A"}</span>
+                    <span style={{ fontSize: "11px", color: "var(--text-muted)" }}>
+                      Mfg: {med.mfg_date ? med.mfg_date.split("T")[0] : "N/A"} | Exp: {med.exp_date ? med.exp_date.split("T")[0] : "N/A"}
+                    </span>
+                  </td>
+                  <td>
+                    <strong style={{ color: "var(--primary)", fontSize: "15px" }}>₹{med.price.toFixed(2)}</strong>
+                  </td>
+                  <td>
+                    <span className={`status-pill ${med.is_active ? "delivered" : "cancelled"}`}>
+                      <span className="status-dot"></span>
                       {med.is_active ? "Active" : "Inactive"}
                     </span>
-                    <label className="switch" onClick={(e) => e.stopPropagation()}>
-                      <input
-                        type="checkbox"
-                        checked={med.is_active}
-                        disabled={!canManage}
-                        onChange={() => handleToggleStatus(med)}
-                      />
-                      <span className="slider"></span>
-                    </label>
-                  </div>
-
+                  </td>
                   {canManage && (
-                    <button className="med-edit-btn" onClick={() => openEditModal(med)}>
-                      <FaEdit /> Edit
-                    </button>
+                    <td>
+                      <div style={{ display: "flex", gap: "8px" }}>
+                        <button 
+                          onClick={() => handleToggleStatus(med)}
+                          style={{
+                            background: "transparent",
+                            border: "1px solid var(--border)",
+                            color: "var(--text-muted)",
+                            padding: "6px 12px",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            transition: "all 0.2s"
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--text-muted)"}
+                          onMouseLeave={(e) => e.currentTarget.style.borderColor = "var(--border)"}
+                        >
+                          {med.is_active ? "Hide" : "Show"}
+                        </button>
+                        <button 
+                          onClick={() => openEditModal(med)}
+                          style={{
+                            background: "var(--accent-blue)",
+                            border: "none",
+                            color: "#fff",
+                            padding: "6px 12px",
+                            borderRadius: "6px",
+                            cursor: "pointer",
+                            fontSize: "12px",
+                            display: "flex",
+                            alignItems: "center",
+                            gap: "6px",
+                            transition: "all 0.2s"
+                          }}
+                          onMouseEnter={(e) => e.currentTarget.style.opacity = "0.9"}
+                          onMouseLeave={(e) => e.currentTarget.style.opacity = "1"}
+                        >
+                          <FaEdit /> Edit
+                        </button>
+                      </div>
+                    </td>
                   )}
-                </div>
-              </div>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+
+          {/* Pagination Controls */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px", borderTop: "1px solid var(--border)" }}>
+            <span style={{ fontSize: "14px", color: "var(--text-muted)" }}>
+              Showing {medicines.length} of {totalItems} items
+            </span>
+            <div style={{ display: "flex", gap: "10px", alignItems: "center" }}>
+              <button 
+                disabled={currentPage === 1}
+                onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid var(--border)", background: "var(--card-bg)", color: "var(--text-main)", cursor: currentPage === 1 ? "not-allowed" : "pointer", opacity: currentPage === 1 ? 0.5 : 1 }}
+              >
+                Previous
+              </button>
+              <span style={{ fontSize: "14px", color: "var(--text-main)", fontWeight: 500 }}>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button 
+                disabled={currentPage === totalPages || totalPages === 0}
+                onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                style={{ padding: "6px 12px", borderRadius: "6px", border: "1px solid var(--border)", background: "var(--card-bg)", color: "var(--text-main)", cursor: currentPage === totalPages || totalPages === 0 ? "not-allowed" : "pointer", opacity: currentPage === totalPages || totalPages === 0 ? 0.5 : 1 }}
+              >
+                Next
+              </button>
             </div>
-          ))}
+          </div>
         </div>
       )}
 
@@ -470,13 +481,12 @@ export default function Medicines() {
             <form onSubmit={handleCreateSubmit}>
               <div className="form-grid-2">
                 <div className="form-group-custom">
-                  <label>Medicine ID (Required)</label>
+                  <label>Medicine ID (Auto-generated)</label>
                   <input
                     type="text"
-                    placeholder="e.g. MED-0098"
-                    value={formMedicineId}
-                    onChange={(e) => setFormMedicineId(e.target.value)}
-                    required
+                    value="Auto-generated"
+                    disabled
+                    style={{ background: "#cbd5e1", color: "#64748b", cursor: "not-allowed" }}
                   />
                 </div>
 
@@ -539,24 +549,30 @@ export default function Medicines() {
               <div className="form-grid-2">
                 <div className="form-group-custom">
                   <label>Category</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Supplements"
+                  <select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
                     required
-                  />
+                  >
+                    <option value="" disabled>Select Category</option>
+                    {MEDICINE_CATEGORIES.map((cat, idx) => (
+                      <option key={idx} value={cat}>{cat}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="form-group-custom">
                   <label>Sub Category</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Calcium Liquids"
+                  <select
                     value={formSubCategory}
                     onChange={(e) => setFormSubCategory(e.target.value)}
                     required
-                  />
+                  >
+                    <option value="" disabled>Select Sub Category</option>
+                    {MEDICINE_SUB_CATEGORIES.map((sub, idx) => (
+                      <option key={idx} value={sub}>{sub}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
@@ -723,24 +739,30 @@ export default function Medicines() {
               <div className="form-grid-2">
                 <div className="form-group-custom">
                   <label>Category</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Supplements"
+                  <select
                     value={formCategory}
                     onChange={(e) => setFormCategory(e.target.value)}
                     required
-                  />
+                  >
+                    <option value="" disabled>Select Category</option>
+                    {MEDICINE_CATEGORIES.map((cat, idx) => (
+                      <option key={idx} value={cat}>{cat}</option>
+                    ))}
+                  </select>
                 </div>
 
                 <div className="form-group-custom">
                   <label>Sub Category</label>
-                  <input
-                    type="text"
-                    placeholder="e.g. Calcium Liquids"
+                  <select
                     value={formSubCategory}
                     onChange={(e) => setFormSubCategory(e.target.value)}
                     required
-                  />
+                  >
+                    <option value="" disabled>Select Sub Category</option>
+                    {MEDICINE_SUB_CATEGORIES.map((sub, idx) => (
+                      <option key={idx} value={sub}>{sub}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

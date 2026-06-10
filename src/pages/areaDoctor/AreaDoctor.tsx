@@ -2,20 +2,21 @@
 
 import "./areaDoctor.css";
 import { useEffect, useState } from "react";
-import { 
-  getDoctors, 
-  updateDoctorStatus, 
-  updateDoctorDetails
+import {
+  getDoctors,
+  updateDoctorStatus,
+  updateDoctorDetails,
+  createDoctor
 } from "./areaDoctor.service";
 import type { Doctor } from "./areaDoctor.service";
-import { 
-  FaSearch, 
-  FaStar, 
-  FaStethoscope, 
-  FaPlus, 
-  FaPhoneAlt, 
-  FaMapMarkerAlt, 
-  FaClipboardCheck, 
+import {
+  FaSearch,
+  FaStar,
+  FaStethoscope,
+  FaPlus,
+  FaPhoneAlt,
+  FaMapMarkerAlt,
+  FaClipboardCheck,
   FaClock,
   FaEdit,
   FaTimes,
@@ -41,7 +42,13 @@ export default function AreaDoctor() {
   const [editRegion, setEditRegion] = useState("");
   const [editCommissionRate, setEditCommissionRate] = useState("");
   const [editAadhaar, setEditAadhaar] = useState("");
-  const [editPan, setEditPan] = useState("");
+
+  // Create Modal States
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newFullName, setNewFullName] = useState("");
+  const [newMobile, setNewMobile] = useState("");
+  const [newAddress, setNewAddress] = useState("");
+  const [newAadhaar, setNewAadhaar] = useState("");
 
   useEffect(() => {
     loadDoctors();
@@ -87,7 +94,6 @@ export default function AreaDoctor() {
     setEditRegion(doc.region || "");
     setEditCommissionRate(doc.commissionRate || "");
     setEditAadhaar(doc.aadhaar || "");
-    setEditPan(doc.pan || "");
   };
 
   // Save Edit Handler
@@ -104,7 +110,6 @@ export default function AreaDoctor() {
       region: editRegion,
       commissionRate: editCommissionRate,
       aadhaar: editAadhaar,
-      pan: editPan
     };
 
     const loadToast = toast.loading("Saving doctor details...");
@@ -121,9 +126,9 @@ export default function AreaDoctor() {
 
   // Filtering Logic
   const filteredDoctors = doctors.filter(d => {
-    const matchesSearch = d.full_name.toLowerCase().includes(search.toLowerCase()) || 
-                          d.doctor_id.toLowerCase().includes(search.toLowerCase()) ||
-                          (d.region || "").toLowerCase().includes(search.toLowerCase());
+    const matchesSearch = d.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      d.doctor_id.toLowerCase().includes(search.toLowerCase()) ||
+      (d.region || "").toLowerCase().includes(search.toLowerCase());
     const matchesSpecialty = specialtyFilter === "All" || (d.specialty || "").includes(specialtyFilter);
     const matchesStatus = statusFilter === "All" || (d.status || "ACTIVE") === statusFilter;
     return matchesSearch && matchesSpecialty && matchesStatus;
@@ -134,53 +139,58 @@ export default function AreaDoctor() {
   const activeCount = doctors.filter(d => (d.status || "ACTIVE") === "ACTIVE").length;
   const activeCasesCount = doctors.reduce((acc, curr) => acc + (curr.activeCases || 0), 0);
 
+  // Save Create Handler
+  const handleCreateDoctor = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newFullName || !newMobile) {
+      toast.error("Full Name and Mobile are required.");
+      return;
+    }
+
+    const loadToast = toast.loading("Onboarding new area doctor...");
+    createDoctor({
+      full_name: newFullName,
+      mobile: newMobile,
+      address: newAddress,
+      aadhaar: newAadhaar,
+    })
+      .then(() => {
+        toast.success("Area Doctor successfully onboarded!", { id: loadToast });
+        setIsCreateModalOpen(false);
+        setNewFullName("");
+        setNewMobile("");
+        setNewAddress("");
+        setNewAadhaar("");
+        loadDoctors();
+      })
+      .catch((err: any) => {
+        toast.error(err.response?.data?.message || "Failed to onboard doctor.", { id: loadToast });
+      });
+  };
+
   return (
     <div className="doctors-page">
       <Toaster position="top-right" />
-      
+
       {/* HEADER SECTION */}
       <div className="doctors-top-bar">
         <div>
           <h1 className="text-gradient">Area Veterinarians Network</h1>
           <p>Onboard, coordinate, and review operating commissions for localized field doctors.</p>
         </div>
-        <button className="add-doctor-btn" onClick={() => toast("Doctor registration handled via Marketing Sub-Admin forms.")}>
+        <button className="add-doctor-btn" onClick={() => setIsCreateModalOpen(true)}>
           <FaPlus />
           <span>Onboard Doctor</span>
         </button>
-      </div>
-
-      {/* QUICK ANALYTICS METRICS */}
-      <div className="doctors-metrics">
-        <div className="doc-metric-box glass-panel">
-          <span className="doc-metric-title">Onboarded Field Doctors</span>
-          <h2>{totalCount} Active</h2>
-          <span className="doc-metric-sub text-up">{activeCount} Currently Available</span>
-        </div>
-        <div className="doc-metric-box glass-panel">
-          <span className="doc-metric-title">Live Consultations</span>
-          <h2>{activeCasesCount} Active</h2>
-          <span className="doc-metric-sub text-duty">Emergency calls on-site</span>
-        </div>
-        <div className="doc-metric-box glass-panel">
-          <span className="doc-metric-title">Emergency Response SLA</span>
-          <h2>18.2 Mins <FaClock className="inline-icon" /></h2>
-          <span className="doc-metric-sub text-up">98% Cases within SLA limit</span>
-        </div>
-        <div className="doc-metric-box glass-panel">
-          <span className="doc-metric-title">Total Cases Resolved</span>
-          <h2>14,820 <FaClipboardCheck className="inline-icon" /></h2>
-          <span className="doc-metric-sub text-up">+450 Cases this month</span>
-        </div>
       </div>
 
       {/* FILTER CONTROL PANEL */}
       <div className="doctors-controls glass-panel">
         <div className="search-group">
           <FaSearch className="search-icon" />
-          <input 
-            type="text" 
-            placeholder="Search by name, ID, or operating region..." 
+          <input
+            type="text"
+            placeholder="Search by name, ID, or operating region..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
@@ -208,81 +218,112 @@ export default function AreaDoctor() {
         </div>
       </div>
 
-      {/* DOCTORS GRID */}
+      {/* DOCTORS TABLE */}
       {isLoading ? (
         <div className="table-loading">Querying Veterinarians Register...</div>
       ) : (
-        <div className="doctors-grid">
-          {filteredDoctors.map((doc, idx) => (
-            <div className={`doctor-card glass-panel card-hover-effect ${(doc.status || "ACTIVE") === "INACTIVE" ? "row-muted" : ""}`} key={idx}>
-              {/* Top Row: Avatar and Badge */}
-              <div className="doctor-card-header">
-                <div className="doctor-brief">
-                  <div className="avatar-placeholder">
-                    {doc.full_name.charAt(0)}
-                  </div>
-                  <div className="doctor-title-block">
-                    <h3>{doc.full_name}</h3>
-                    <span className="doc-degree">{doc.degree || "B.V.Sc & A.H"}</span>
-                  </div>
-                </div>
-                <span className={`status-pill ${(doc.status || "ACTIVE").toLowerCase()}`}>
-                  <span className="status-dot"></span>
-                  {(doc.status || "ACTIVE") === "ACTIVE" ? "Active" : "Hidden"}
-                </span>
-              </div>
-
-              {/* Middle Row: Star Ratings & Specialty */}
-              <div className="doctor-specialty-row">
-                <span className="doc-specialty-badge">{doc.specialty || "General Veterinary"}</span>
-                <div className="rating-badge">
-                  <FaStar className="star-icon" /> <span>{doc.rating || 4.8}</span>
-                </div>
-              </div>
-
-              {/* Performance metrics grid */}
-              <div className="doctor-stats-table">
-                <div className="doc-stat-col">
-                  <span className="stat-label">Active Cases</span>
-                  <strong className="stat-value">{doc.activeCases}</strong>
-                </div>
-                <div className="doc-stat-col">
-                  <span className="stat-label">Resolved Cases</span>
-                  <strong className="stat-value">{doc.casesResolved}</strong>
-                </div>
-                <div className="doc-stat-col">
-                  <span className="stat-label">Commission</span>
-                  <strong className="stat-value highlight-value">{doc.commissionRate || "5%"}</strong>
-                </div>
-              </div>
-
-              {/* Operational details */}
-              <div className="doctor-details-list">
-                <div className="detail-item">
-                  <FaMapMarkerAlt /> <span>Operates in: <strong>{doc.region || "N/A"}</strong></span>
-                </div>
-                <div className="detail-item">
-                  <FaPhoneAlt /> <span>Mobile Number: <strong>{doc.mobile}</strong></span>
-                </div>
-                <div className="detail-item">
-                  <FaIdCard /> <span>Pan Card: <strong>{doc.pan || "N/A"}</strong></span>
-                </div>
-              </div>
-
-              {/* Action triggers */}
-              <div className="doctor-actions">
-                <button 
-                  className={`status-toggle-btn ${(doc.status || "ACTIVE") === "ACTIVE" ? "active" : "inactive"}`}
-                  onClick={() => handleStatusToggle(doc)}
-                >
-                  {(doc.status || "ACTIVE") === "ACTIVE" ? "Hide Doctor" : "Activate Doctor"}
-                </button>
-                <button className="ledger-btn" onClick={() => openEditModal(doc)}>
-                  <FaEdit /> Edit Details
-                </button>
-              </div>
-            </div>
-          ))}
+        <div className="table-responsive glass-panel">
+          <table>
+            <thead>
+              <tr>
+                <th>Doctor</th>
+                <th>Identity & Contact</th>
+                <th>Region</th>
+                <th>Status</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredDoctors.map((doc, idx) => {
+                const isActive = (doc.status || "ACTIVE") === "ACTIVE";
+                return (
+                  <tr key={idx} className={!isActive ? "row-muted" : ""}>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                        <div className="avatar-placeholder" style={{ width: "40px", height: "40px", fontSize: "16px", flexShrink: 0 }}>
+                          {doc.full_name.charAt(0)}
+                        </div>
+                        <div style={{ display: "flex", flexDirection: "column" }}>
+                          <strong style={{ color: "var(--text-main)", fontSize: "14px" }}>{doc.full_name}</strong>
+                          <span style={{ fontSize: "12px", color: "var(--text-muted)" }}>{doc.degree || "B.V.Sc & A.H"}</span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "13px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <FaPhoneAlt color="var(--text-muted)" size={12} />
+                          <strong>{doc.mobile}</strong>
+                        </div>
+                        <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                          <FaIdCard color="var(--text-muted)" size={12} />
+                          <span><strong>{doc.aadhaar || "N/A"}</strong></span>
+                        </div>
+                      </div>
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", fontSize: "13px" }}>
+                        <FaMapMarkerAlt color="var(--accent-blue)" size={14} />
+                        <strong>{doc.region || "Hyderabad, Telangana"}</strong>
+                      </div>
+                    </td>
+                    <td>
+                      <span className={`status-pill ${isActive ? "active" : "inactive"}`}>
+                        <span className="status-dot"></span>
+                        {isActive ? "Active" : "Hidden"}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                        <button
+                          className={`action-btn-toggle ${isActive ? "active" : ""}`}
+                          onClick={() => handleStatusToggle(doc)}
+                          title={isActive ? "Hide Doctor" : "Activate Doctor"}
+                          style={{
+                            padding: "6px 12px",
+                            borderRadius: "6px",
+                            border: "1px solid var(--border-color)",
+                            background: isActive ? "transparent" : "var(--bg-app)",
+                            color: isActive ? "var(--text-muted)" : "var(--text-main)",
+                            fontSize: "12px",
+                            fontWeight: "600",
+                            cursor: "pointer"
+                          }}
+                        >
+                          {isActive ? "Hide" : "Activate"}
+                        </button>
+                        <button
+                          className="action-btn-icon edit"
+                          onClick={() => openEditModal(doc)}
+                          title="Edit Details"
+                          style={{
+                            padding: "6px",
+                            borderRadius: "6px",
+                            border: "1px solid var(--border-color)",
+                            background: "transparent",
+                            color: "var(--accent-blue)",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center"
+                          }}
+                        >
+                          <FaEdit size={14} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+              {filteredDoctors.length === 0 && (
+                <tr>
+                  <td colSpan={5} style={{ textAlign: "center", padding: "40px", color: "var(--text-muted)" }}>
+                    No doctors found matching your criteria.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
         </div>
       )}
 
@@ -317,8 +358,8 @@ export default function AreaDoctor() {
 
               <div className="form-group-custom">
                 <label>Full Name</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={editFullName}
                   onChange={(e) => setEditFullName(e.target.value)}
                   required
@@ -327,8 +368,8 @@ export default function AreaDoctor() {
 
               <div className="form-group-custom">
                 <label>Academic Degrees</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={editDegree}
                   placeholder="e.g. B.V.Sc & A.H, M.V.Sc"
                   onChange={(e) => setEditDegree(e.target.value)}
@@ -337,8 +378,8 @@ export default function AreaDoctor() {
 
               <div className="form-group-custom">
                 <label>Specialization Scope</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={editSpecialty}
                   placeholder="e.g. Bovine Health (Cattle)"
                   onChange={(e) => setEditSpecialty(e.target.value)}
@@ -347,8 +388,8 @@ export default function AreaDoctor() {
 
               <div className="form-group-custom">
                 <label>Operating Region</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={editRegion}
                   placeholder="e.g. Kolar, Karnataka"
                   onChange={(e) => setEditRegion(e.target.value)}
@@ -357,8 +398,8 @@ export default function AreaDoctor() {
 
               <div className="form-group-custom">
                 <label>Commission Percentage (%)</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={editCommissionRate}
                   placeholder="e.g. 5%"
                   onChange={(e) => setEditCommissionRate(e.target.value)}
@@ -367,27 +408,16 @@ export default function AreaDoctor() {
 
               <div className="form-group-custom">
                 <label>Aadhaar Proof Number</label>
-                <input 
-                  type="text" 
+                <input
+                  type="text"
                   value={editAadhaar}
                   placeholder="xxxx-xxxx-xxxx"
                   onChange={(e) => setEditAadhaar(e.target.value)}
                 />
               </div>
-
-              <div className="form-group-custom">
-                <label>PAN Proof Number</label>
-                <input 
-                  type="text" 
-                  value={editPan}
-                  placeholder="ABCDE1234F"
-                  onChange={(e) => setEditPan(e.target.value)}
-                />
-              </div>
-
               <div className="form-group-custom">
                 <label>Clinic Address</label>
-                <textarea 
+                <textarea
                   value={editAddress}
                   rows={2}
                   style={{
@@ -405,8 +435,8 @@ export default function AreaDoctor() {
               </div>
 
               <div className="modal-actions-footer">
-                <button 
-                  type="button" 
+                <button
+                  type="button"
                   className="cancel-btn"
                   onClick={() => setEditingDoctor(null)}
                 >
@@ -414,6 +444,88 @@ export default function AreaDoctor() {
                 </button>
                 <button type="submit" className="save-btn">
                   <FaCheck /> Save Doctor
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CREATE DOCTOR MODAL */}
+      {isCreateModalOpen && (
+        <div className="edit-modal-backdrop" onClick={() => setIsCreateModalOpen(false)}>
+          <div className="edit-modal-card glass-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <div className="modal-shield-icon">
+                <FaStethoscope />
+              </div>
+              <div>
+                <h3>Onboard Area Veterinarian</h3>
+                <p>Register a new localized field doctor to the master registry.</p>
+              </div>
+            </div>
+
+            <form onSubmit={handleCreateDoctor} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+              <div className="form-group-custom">
+                <label>Legal Full Name <span style={{ color: "var(--accent-rose)" }}>*</span></label>
+                <input
+                  type="text"
+                  value={newFullName}
+                  placeholder="e.g. Dr. Ramesh Kumar"
+                  onChange={(e) => setNewFullName(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group-custom">
+                <label>Mobile Number <span style={{ color: "var(--accent-rose)" }}>*</span></label>
+                <input
+                  type="text"
+                  value={newMobile}
+                  placeholder="10-digit mobile number"
+                  onChange={(e) => setNewMobile(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="form-group-custom">
+                <label>Aadhaar Proof Number</label>
+                <input
+                  type="text"
+                  value={newAadhaar}
+                  placeholder="xxxx-xxxx-xxxx"
+                  onChange={(e) => setNewAadhaar(e.target.value)}
+                />
+              </div>
+              <div className="form-group-custom">
+                <label>Clinic/Operating Address</label>
+                <textarea
+                  value={newAddress}
+                  rows={2}
+                  style={{
+                    border: "1px solid var(--border-color)",
+                    borderRadius: "8px",
+                    background: "var(--bg-app)",
+                    padding: "8px 14px",
+                    fontSize: "13px",
+                    color: "var(--text-main)",
+                    outline: "none",
+                    fontFamily: "inherit"
+                  }}
+                  onChange={(e) => setNewAddress(e.target.value)}
+                />
+              </div>
+
+              <div className="modal-actions-footer">
+                <button
+                  type="button"
+                  className="cancel-btn"
+                  onClick={() => setIsCreateModalOpen(false)}
+                >
+                  <FaTimes /> Cancel
+                </button>
+                <button type="submit" className="save-btn">
+                  <FaCheck /> Onboard Doctor
                 </button>
               </div>
             </form>

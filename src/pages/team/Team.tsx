@@ -169,12 +169,70 @@ function RoleSelect({ value, onChange }: { value: Role; onChange: (r: Role) => v
   );
 }
 
+function OnboardModal({ form, onChange, onSave, onClose }: {
+  form: OnboardForm;
+  onChange: (patch: Partial<OnboardForm>) => void;
+  onSave: (e: React.FormEvent) => void;
+  onClose: () => void;
+}) {
+  return (
+    <div className="edit-modal-backdrop">
+      <div className="edit-modal-card glass-panel">
+        <div className="modal-header">
+          <FaUserPlus className="modal-shield-icon" />
+          <div>
+            <h3>Onboard Sub-Admin</h3>
+            <p>Configure access and roles for new employees.</p>
+          </div>
+        </div>
+
+        <form onSubmit={onSave}>
+          <FormField label="Full Name">
+            <input type="text" placeholder="e.g. Narendra Kumar" value={form.name} onChange={(e) => onChange({ name: e.target.value })} required />
+          </FormField>
+
+          <FormField label="Work Email">
+            <div className="input-with-icon">
+              <FaEnvelope />
+              <input type="email" placeholder="username@gowmithra.com" value={form.email} onChange={(e) => onChange({ email: e.target.value })} required />
+            </div>
+          </FormField>
+
+          <FormField label="Mobile Number">
+            <div className="input-with-icon">
+              <FaPhoneAlt />
+              <input type="tel" placeholder="+91 98455 01234" value={form.mobile} onChange={(e) => onChange({ mobile: e.target.value })} required />
+            </div>
+          </FormField>
+
+          <FormField label="Login Password">
+            <div className="input-with-icon">
+              <FaLock />
+              <input type="password" placeholder="Min 6 characters" value={form.password} onChange={(e) => onChange({ password: e.target.value })} required />
+            </div>
+          </FormField>
+
+          <FormField label="Department Role">
+            <RoleSelect value={form.role} onChange={(role) => onChange({ role })} />
+          </FormField>
+
+          <div className="modal-actions-footer">
+            <button type="button" className="cancel-btn" onClick={onClose}><FaTimes /> Cancel</button>
+            <button type="submit" className="save-btn"><FaCheck /> Onboard</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
+
 // ─── Main Page ───────────────────────────────────────────────────
 
 export default function Team() {
   const [employees, setEmployees] = useState<Employee[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [onboardForm, setOnboardForm] = useState<OnboardForm>(EMPTY_ONBOARD);
+  const [isOnboardModalOpen, setIsOnboardModalOpen] = useState(false);
   const [editTarget, setEditTarget] = useState<Employee | null>(null);
   const [editForm, setEditForm] = useState<EditForm>(EMPTY_EDIT);
 
@@ -183,7 +241,15 @@ export default function Team() {
   const loadEmployees = () => {
     setIsLoading(true);
     getEmployees()
-      .then((res) => setEmployees(res.data))
+      .then((res) => {
+        const sorted = [...res.data].sort((a, b) => {
+          if (typeof a.id === 'number' && typeof b.id === 'number') {
+            return a.id - b.id;
+          }
+          return String(a.id).localeCompare(String(b.id));
+        });
+        setEmployees(sorted);
+      })
       .catch(() => toast.error("Failed to load team data."))
       .finally(() => setIsLoading(false));
   };
@@ -195,6 +261,7 @@ export default function Team() {
       .then(() => {
         toast.success("Employee onboarded!", { id: loadToast });
         setOnboardForm(EMPTY_ONBOARD);
+        setIsOnboardModalOpen(false);
         loadEmployees();
       })
       .catch((err) => toast.error(err.message || "Failed to register employee.", { id: loadToast }));
@@ -262,59 +329,28 @@ export default function Team() {
         <MetricCard icon={<FaBullhorn />} label="Marketing & Field Recruiters" count={counts.marketing} unit="Recruiters" description="Registers doctors & farmers" colorClass="marketing" />
       </div>
 
-      <div className="team-split-layout">
-        {/* Onboard Form */}
-        <div className="onboard-form-card glass-panel">
-          <div className="card-header-block">
-            <FaUserPlus className="accent-icon" />
-            <div>
-              <h3>Onboard Sub-Admin</h3>
-              <p>Configure access and roles for new employees.</p>
-            </div>
-          </div>
-
-          <form onSubmit={handleOnboard}>
-            <FormField label="Full Name">
-              <input type="text" placeholder="e.g. Narendra Kumar" value={onboardForm.name} onChange={(e) => setOnboardForm((p) => ({ ...p, name: e.target.value }))} required />
-            </FormField>
-
-            <FormField label="Work Email">
-              <div className="input-with-icon">
-                <FaEnvelope />
-                <input type="email" placeholder="username@gowmithra.com" value={onboardForm.email} onChange={(e) => setOnboardForm((p) => ({ ...p, email: e.target.value }))} required />
-              </div>
-            </FormField>
-
-            <FormField label="Mobile Number">
-              <div className="input-with-icon">
-                <FaPhoneAlt />
-                <input type="tel" placeholder="+91 98455 01234" value={onboardForm.mobile} onChange={(e) => setOnboardForm((p) => ({ ...p, mobile: e.target.value }))} required />
-              </div>
-            </FormField>
-
-            <FormField label="Login Password">
-              <div className="input-with-icon">
-                <FaLock />
-                <input type="password" placeholder="Min 6 characters" value={onboardForm.password} onChange={(e) => setOnboardForm((p) => ({ ...p, password: e.target.value }))} required />
-              </div>
-            </FormField>
-
-            <FormField label="Department Role">
-              <RoleSelect value={onboardForm.role} onChange={(role) => setOnboardForm((p) => ({ ...p, role }))} />
-            </FormField>
-
-            <button type="submit" className="onboard-submit-btn">Onboard Employee</button>
-          </form>
-        </div>
-
+      <div>
         {/* Employee Table */}
-        <div className="team-list-card glass-panel">
+        <div className="team-list-card glass-panel" style={{ marginTop: '24px' }}>
           <div className="card-header-block space-between">
             <div>
               <h3>Active Operations Team</h3>
               <p>Manage all registered sub-admin accounts.</p>
             </div>
-            <span className="member-count-pill">{counts.total} Members</span>
+            <div style={{ display: 'flex', gap: '16px', alignItems: 'center' }}>
+              <span className="member-count-pill">{counts.total} Members</span>
+              <button 
+                onClick={() => setIsOnboardModalOpen(true)}
+                style={{
+                  display: 'flex', alignItems: 'center', gap: '8px', 
+                  background: 'var(--primary)', color: '#fff', border: 'none', 
+                  padding: '8px 16px', borderRadius: '8px', cursor: 'pointer', fontWeight: 600,
+                  fontSize: '14px', transition: 'all 0.2s'
+                }}
+              >
+                <FaUserPlus /> Add Employee
+              </button>
+            </div>
           </div>
 
           {isLoading ? (
@@ -342,6 +378,15 @@ export default function Team() {
           )}
         </div>
       </div>
+
+      {isOnboardModalOpen && (
+        <OnboardModal
+          form={onboardForm}
+          onChange={(patch) => setOnboardForm((p) => ({ ...p, ...patch }))}
+          onSave={handleOnboard}
+          onClose={() => setIsOnboardModalOpen(false)}
+        />
+      )}
 
       {editTarget && (
         <EditModal

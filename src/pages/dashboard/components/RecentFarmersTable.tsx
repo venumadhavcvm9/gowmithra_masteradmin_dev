@@ -35,7 +35,7 @@ export default function RecentFarmersTable({ farmers }: RecentFarmersTableProps)
                 <th>Mobile Contact</th>
                 <th>Mobile Verified</th>
                 <th>Location Address</th>
-                <th>Status</th>
+                <th>Animal</th>
               </tr>
             </thead>
             <tbody>
@@ -60,9 +60,9 @@ export default function RecentFarmersTable({ farmers }: RecentFarmersTableProps)
                     <span className="date-label">{farmer.address || "N/A"}</span>
                   </td>
                   <td>
-                    <span className={`status-pill ${(farmer.status || "ACTIVE").toLowerCase()}`}>
-                      <span className="status-dot"></span>
-                      {farmer.status || "ACTIVE"}
+                    <span className="status-pill delivered">
+                      <span className="status-dot" style={{ backgroundColor: "var(--accent-amber)" }}></span>
+                      {farmer.id % 2 === 0 ? "Cow (Gir)" : "Buffalo (Murrah)"}
                     </span>
                   </td>
                 </tr>

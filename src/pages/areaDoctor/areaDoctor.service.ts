@@ -17,38 +17,46 @@ export interface Doctor {
   region?: string;
   commissionRate?: string;
   aadhaar?: string;
-  pan?: string;
 }
 
-// 🔹 Get All Area Doctors: GET /api/admin/area-doctors
+// 🔹 Get All Area Doctors: GET /api/area-doctors
 export const getDoctors = async (): Promise<{ data: Doctor[] }> => {
-  const res = await API.get("/admin/area-doctors");
+  const res = await API.get("/area-doctors");
   if (res.data && res.data.data && Array.isArray(res.data.data)) {
     return { data: res.data.data };
   }
   throw new Error("Invalid API format received");
 };
 
-// 🔹 Update Doctor Status: PATCH /api/admin/area-doctors/:id/status
+// 🔹 Update Doctor Status: PATCH /api/area-doctors/:id/status
 export const updateDoctorStatus = async (
   id: number,
   status: "ACTIVE" | "INACTIVE"
 ): Promise<{ data: Doctor }> => {
-  const res = await API.patch(`/api/admin/area-doctors/${id}/status`, { status });
+  const res = await API.patch(`/area-doctors/${id}/status`, { status });
   if (res.data && res.data.data) {
     return { data: res.data.data };
   }
   throw new Error("Invalid API format received");
 };
 
-// 🔹 Update Doctor Details: PATCH /api/admin/area-doctors/:id
+// 🔹 Update Doctor Details: PATCH /api/area-doctors/:id
 export const updateDoctorDetails = async (
   id: number,
   data: Partial<Doctor>
 ): Promise<{ data: Doctor }> => {
-  const res = await API.patch(`/api/admin/area-doctors/${id}`, data);
+  const res = await API.patch(`/area-doctors/${id}`, data);
   if (res.data && res.data.data) {
     return { data: res.data.data };
   }
   throw new Error("Invalid API format received");
+};
+
+// 🔹 Create Area Doctor: POST /api/area-doctors
+export const createDoctor = async (data: Partial<Doctor>): Promise<{ data: Doctor }> => {
+  const res = await API.post("/area-doctors", data);
+  if (res.data && res.data.data) {
+    return { data: res.data.data };
+  }
+  throw new Error("Failed to create area doctor");
 };

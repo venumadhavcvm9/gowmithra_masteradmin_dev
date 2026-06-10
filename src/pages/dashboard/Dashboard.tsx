@@ -11,9 +11,7 @@ import {
   getDashboardUsers
 } from "./dashboard.service";
 import DashboardStats from "./components/DashboardStats";
-import DashboardCharts from "./components/DashboardCharts";
 import RecentFarmersTable from "./components/RecentFarmersTable";
-import BestSellersAndDoctors from "./components/BestSellersAndDoctors";
 
 export default function Dashboard() {
   const [farmersCount, setFarmersCount] = useState(0);
@@ -73,25 +71,6 @@ export default function Dashboard() {
   return (
     <div className="dashboard-page">
       <Toaster position="top-right" />
-
-      {/* HEADER SECTION */}
-      <div className="dashboard-top">
-        <div>
-          <h1 className="text-gradient">Veterinary Operations Hub</h1>
-          <p>Real-time analytics and livestock healthcare distribution controls.</p>
-        </div>
-
-        <div className="top-action-group">
-          <button className="new-btn" aria-label="Add New Asset" onClick={loadDashboardData}>
-            <span>Refresh Stats</span>
-          </button>
-          <button className="export-btn" aria-label="Export Reports">
-            <FaFileExport />
-            <span>Export Report</span>
-          </button>
-        </div>
-      </div>
-
       {isLoading ? (
         <div style={{ padding: "80px", textAlign: "center", fontWeight: 600, color: "var(--text-muted)" }}>
           Synchronizing with Admin database services...
@@ -103,17 +82,10 @@ export default function Dashboard() {
             farmersCount={farmersCount}
             doctorsCount={doctorsCount}
             vendorsCount={vendorsCount}
-            catalogCount={catalogCount}
           />
-
-          {/* CHARTS CONTAINER SECTION */}
-          <DashboardCharts />
 
           {/* RECENT FARMERS TABLE ROW */}
           <RecentFarmersTable farmers={farmers} />
-
-          {/* BOTTOM ANALYSIS SECTION */}
-          <BestSellersAndDoctors doctors={doctors} />
         </>
       )}
     </div>

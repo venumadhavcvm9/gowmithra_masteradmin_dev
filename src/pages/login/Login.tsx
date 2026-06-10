@@ -41,7 +41,7 @@ export default function Login() {
         throw new Error("Invalid response from server.");
       }
 
-      loginUser(data.user);
+      loginUser(data.user, data.token);
       toast.success("Access granted!", { id: loadingToast });
       navigate(getPrimaryLandingPath(data.user.role));
     } catch (err: any) {

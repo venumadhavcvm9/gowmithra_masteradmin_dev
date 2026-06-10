@@ -12,9 +12,9 @@ export const getPublicDashboardStats = async () => {
   return res.data;
 };
 
-// 🔹 Get All Area Doctors: GET /api/admin/area-doctors
+// 🔹 Get All Area Doctors: GET /api/area-doctors
 export const getDashboardDoctors = async () => {
-  const res = await API.get("/admin/area-doctors");
+  const res = await API.get("/area-doctors");
   return res.data;
 };
 

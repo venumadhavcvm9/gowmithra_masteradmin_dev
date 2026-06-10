@@ -20,6 +20,9 @@ import {
   FaStore,
 } from "react-icons/fa";
 import { toast, Toaster } from "react-hot-toast";
+import html2canvas from "html2canvas";
+import jsPDF from "jspdf";
+import { FaFileDownload } from "react-icons/fa";
 
 const parseOrderItems = (items: any): OrderItem[] => {
   if (!items) return [];
@@ -51,6 +54,9 @@ export default function Orders() {
   // Selected Order Modal
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
 
+  // Invoice Modal
+  const [invoiceModalOrder, setInvoiceModalOrder] = useState<Order | null>(null);
+
   // Status/Payment updates temporary state in modal
   const [nextOrderStatus, setNextOrderStatus] = useState<OrderStatus | "">("");
   const [shopIdInput, setShopIdInput] = useState("");
@@ -65,6 +71,28 @@ export default function Orders() {
   useEffect(() => {
     loadOrders();
   }, [page, orderStatusFilter, paymentStatusFilter, shopIdFilter]);
+
+  const downloadPDF = async () => {
+    const element = document.getElementById("invoice-print-area");
+    if (!element) return;
+    
+    const loadToast = toast.loading("Generating PDF...");
+    try {
+      const canvas = await html2canvas(element, { scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+      const pdf = new jsPDF("p", "mm", "a4");
+      
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, "PNG", 0, 0, pdfWidth, pdfHeight);
+      pdf.save(`Invoice_${invoiceModalOrder?.order_id || "Download"}.pdf`);
+      toast.success("PDF Downloaded successfully!", { id: loadToast });
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to generate PDF", { id: loadToast });
+    }
+  };
 
   const loadOrders = () => {
     setIsLoading(true);
@@ -281,6 +309,7 @@ export default function Orders() {
               <table>
                 <thead>
                   <tr>
+                    <th>Order Date</th>
                     <th>Order ID</th>
                     <th>Recipient</th>
                     <th>Ordered Medicines</th>
@@ -289,7 +318,6 @@ export default function Orders() {
                     <th>Payment Status</th>
                     <th>Order Status</th>
                     <th>Shop ID</th>
-                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -302,7 +330,18 @@ export default function Orders() {
                     return (
                       <tr key={order.id}>
                         <td>
-                          <strong>{order.order_id}</strong>
+                          <span style={{ fontSize: "12px", color: "var(--text-muted)", fontWeight: "600", whiteSpace: "nowrap" }}>
+                            {new Date(order.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                          </span>
+                        </td>
+                        <td>
+                          <button 
+                            style={{ background: "transparent", border: "none", color: "var(--accent-blue)", fontWeight: "bold", cursor: "pointer", textDecoration: "underline", padding: 0 }}
+                            onClick={() => handleOpenDetails(order)}
+                            title="Manage Order Details"
+                          >
+                            {order.order_id}
+                          </button>
                         </td>
                         <td>
                           <div className="order-profile-cell">
@@ -311,8 +350,19 @@ export default function Orders() {
                           </div>
                         </td>
                         <td>
-                          <div className="order-items-cell" title={itemsSummary}>
-                            {itemsSummary}
+                          <div 
+                            className="clickable-order-items"
+                            onClick={() => setInvoiceModalOrder(order)}
+                            title="Click to view full Invoice"
+                            style={{ display: "flex", flexDirection: "column", gap: "4px", fontSize: "12px", color: "var(--text-muted)", minWidth: "180px", cursor: "pointer", padding: "8px", borderRadius: "8px", background: "rgba(0,0,0,0.02)", border: "1px dashed transparent", transition: "all 0.2s" }}
+                            onMouseEnter={(e) => e.currentTarget.style.borderColor = "var(--border-color)"}
+                            onMouseLeave={(e) => e.currentTarget.style.borderColor = "transparent"}
+                          >
+                            {parseOrderItems(order.items).map((it, idx) => (
+                              <div key={idx} style={{ lineHeight: "1.4", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={`${it.name} (x${it.quantity})`}>
+                                • {it.name} <strong style={{color:"var(--text-main)"}}>(x{it.quantity})</strong>
+                              </div>
+                            ))}
                           </div>
                         </td>
                         <td>
@@ -341,14 +391,6 @@ export default function Orders() {
                           <strong style={{ color: "var(--text-muted)" }}>
                             {order.shop_id ? `SH-${order.shop_id}` : "Not Assigned"}
                           </strong>
-                        </td>
-                        <td>
-                          <button
-                            className="manage-order-btn"
-                            onClick={() => handleOpenDetails(order)}
-                          >
-                            <FaInfoCircle /> Manage
-                          </button>
                         </td>
                       </tr>
                     );
@@ -384,7 +426,78 @@ export default function Orders() {
         )}
       </div>
 
-      {/* DETAIL MODAL */}
+      {/* INVOICE MODAL */}
+      {invoiceModalOrder && (
+        <div className="edit-modal-backdrop" onClick={() => setInvoiceModalOrder(null)}>
+          <div className="invoice-modal-card" onClick={(e) => e.stopPropagation()}>
+            <div id="invoice-print-area" className="invoice-print-area">
+              <div className="invoice-customer-info">
+                <div className="invoice-info-col">
+                  <label>CUSTOMER NAME</label>
+                  <span>{invoiceModalOrder.full_name || "N/A"}</span>
+                </div>
+                <div className="invoice-info-col">
+                  <label>CONTACT MOBILE</label>
+                  <span>{invoiceModalOrder.mobile || "N/A"}</span>
+                </div>
+                <div className="invoice-info-col">
+                  <label>DELIVERY ADDRESS</label>
+                  <span>{invoiceModalOrder.delivery_address || "N/A"}</span>
+                </div>
+                <div className="invoice-info-col">
+                  <label>PAYMENT METHOD</label>
+                  <span>{invoiceModalOrder.payment_mode} ({invoiceModalOrder.payment_mode})</span>
+                </div>
+              </div>
+              
+              <h4 className="invoice-section-title">ITEMIZED SUMMARY</h4>
+              
+              <table className="invoice-items-table">
+                <thead>
+                  <tr>
+                    <th>ITEM ID</th>
+                    <th>MEDICINE NAME</th>
+                    <th>PRICE</th>
+                    <th>QUANTITY</th>
+                    <th>SUBTOTAL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {parseOrderItems(invoiceModalOrder.items).map((it, idx) => {
+                    const price = Number(it.price || 0);
+                    const qty = Number(it.quantity || 1);
+                    return (
+                      <tr key={idx}>
+                        <td>MED{String(it.medicine_id || "000").padStart(4, "0")}</td>
+                        <td><strong>{it.name}</strong></td>
+                        <td>₹{price.toFixed(2)}</td>
+                        <td>{qty}</td>
+                        <td><strong>₹{(price * qty).toFixed(2)}</strong></td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+              
+              <div className="invoice-total">
+                <span>TOTAL AMOUNT:</span>
+                <strong className="invoice-total-val">₹{Number(invoiceModalOrder.total_amount || 0).toFixed(2)}</strong>
+              </div>
+            </div>
+            
+            <div className="invoice-actions" style={{ display: "flex", justifyContent: "flex-end", gap: "12px", marginTop: "20px" }}>
+              <button className="cancel-btn" onClick={() => setInvoiceModalOrder(null)}>
+                <FaTimes /> Close
+              </button>
+              <button className="save-btn" onClick={downloadPDF} style={{ background: "var(--accent-blue)" }}>
+                <FaFileDownload /> Download PDF
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL (Order details & transitions) */}
       {selectedOrder && (
         <div className="edit-modal-backdrop" onClick={() => setSelectedOrder(null)}>
           <div className="order-modal-card glass-panel" onClick={(e) => e.stopPropagation()}>

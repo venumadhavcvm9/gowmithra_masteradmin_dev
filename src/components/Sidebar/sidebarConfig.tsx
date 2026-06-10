@@ -6,7 +6,9 @@ import {
   FaCapsules,
   FaClipboardList,
   FaClinicMedical,
-  FaUserShield
+  FaUserShield,
+  FaStore,
+  FaMoneyBillWave
 } from "react-icons/fa";
 
 export const menus = [
@@ -15,26 +17,7 @@ export const menus = [
     icon: <FaHome />,
     path: "/dashboard",
   },
-  {
-    name: "Manage Team",
-    icon: <FaUserShield />,
-    path: "/team",
-  },
-  {
-    name: "Sales",
-    icon: <FaChartLine />,
-    path: "/sales",
-  },
-  {
-    name: "Users",
-    icon: <FaUsers />,
-    path: "/users",
-  },
-  {
-    name: "Area Doctors",
-    icon: <FaUserMd />,
-    path: "/area-doctors",
-  },
+
   {
     name: "Medicines",
     icon: <FaCapsules />,
@@ -46,8 +29,38 @@ export const menus = [
     path: "/orders",
   },
   {
+    name: "Area Doctors",
+    icon: <FaUserMd />,
+    path: "/area-doctors",
+  },
+  {
+    name: "Sales",
+    icon: <FaChartLine />,
+    path: "/sales",
+  },
+  {
+    name: "Manage Team",
+    icon: <FaUserShield />,
+    path: "/team",
+  },
+  {
+    name: "Stores",
+    icon: <FaStore />,
+    path: "/stores",
+  },
+  {
+    name: "Users",
+    icon: <FaUsers />,
+    path: "/users",
+  },
+  {
     name: "Vendors",
     icon: <FaClinicMedical />,
     path: "/vendors",
+  },
+  {
+    name: "Settlements",
+    icon: <FaMoneyBillWave />,
+    path: "/pharmacy-settlements",
   },
 ];

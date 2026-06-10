@@ -36,15 +36,33 @@ export interface Medicine {
   updatedAt?: string;
 }
 
+export interface PaginatedMedicines {
+  data: Medicine[];
+  meta: {
+    totalItems: number;
+    totalPages: number;
+    currentPage: number;
+  };
+}
+
 // 🔹 Get All Medicines: GET /api/medicines
-export const getMedicines = async (): Promise<{ data: Medicine[] }> => {
-  const res = await API.get("/medicines");
-  if (res.data && Array.isArray(res.data)) {
-    return { data: res.data };
+export const getMedicines = async (params: {
+  page: number;
+  limit: number;
+  search?: string;
+  category?: string;
+  type?: string;
+  status?: string;
+}): Promise<PaginatedMedicines> => {
+  const res = await API.get("/medicines", { params });
+  if (res.data && res.data.meta) {
+    return res.data;
   }
-  // Fallback check if it was wrapped in a standard { success: true, data } response
+  if (res.data && Array.isArray(res.data)) {
+    return { data: res.data, meta: { totalItems: res.data.length, totalPages: 1, currentPage: 1 } };
+  }
   if (res.data && res.data.success && Array.isArray(res.data.data)) {
-    return { data: res.data.data };
+    return { data: res.data.data, meta: { totalItems: res.data.data.length, totalPages: 1, currentPage: 1 } };
   }
   throw new Error("Invalid API format received");
 };
@@ -60,12 +78,12 @@ export const createMedicine = async (
   throw new Error("Invalid API format received");
 };
 
-// 🔹 Update Medicine: PUT /api/medicines/:id (Stock role only)
+// 🔹 Update Medicine: PATCH /api/medicines/:id (Stock role only)
 export const updateMedicine = async (
   id: number,
   data: Partial<Medicine>
 ): Promise<{ message: string }> => {
-  const res = await API.put(`/medicines/${id}`, data);
+  const res = await API.patch(`/medicines/${id}`, data);
   if (res.data) {
     return res.data;
   }

@@ -11,13 +11,10 @@ import {
 import type { Doctor } from "./areaDoctor.service";
 import {
   FaSearch,
-  FaStar,
   FaStethoscope,
   FaPlus,
   FaPhoneAlt,
   FaMapMarkerAlt,
-  FaClipboardCheck,
-  FaClock,
   FaEdit,
   FaTimes,
   FaCheck,
@@ -133,11 +130,6 @@ export default function AreaDoctor() {
     const matchesStatus = statusFilter === "All" || (d.status || "ACTIVE") === statusFilter;
     return matchesSearch && matchesSpecialty && matchesStatus;
   });
-
-  // Department counts
-  const totalCount = doctors.length;
-  const activeCount = doctors.filter(d => (d.status || "ACTIVE") === "ACTIVE").length;
-  const activeCasesCount = doctors.reduce((acc, curr) => acc + (curr.activeCases || 0), 0);
 
   // Save Create Handler
   const handleCreateDoctor = (e: React.FormEvent) => {

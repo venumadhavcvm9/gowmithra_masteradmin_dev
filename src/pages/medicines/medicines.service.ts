@@ -31,6 +31,7 @@ export interface Medicine {
   show_to_users: boolean;
   show_to_shops: boolean;
   show_to_vendors: boolean;
+  reorder_level?: number;
   created_by?: number;
   createdAt?: string;
   updatedAt?: string;

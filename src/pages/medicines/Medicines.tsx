@@ -83,6 +83,7 @@ export default function Medicines() {
   const [formShowToUsers, setFormShowToUsers] = useState(true);
   const [formShowToShops, setFormShowToShops] = useState(true);
   const [formShowToVendors, setFormShowToVendors] = useState(true);
+  const [formReorderLevel, setFormReorderLevel] = useState(10);
 
   // Debounce search
   useEffect(() => {
@@ -158,6 +159,7 @@ export default function Medicines() {
     setFormShowToUsers(true);
     setFormShowToShops(true);
     setFormShowToVendors(true);
+    setFormReorderLevel(10);
     setShowAddModal(true);
   };
 
@@ -177,6 +179,7 @@ export default function Medicines() {
     setFormShowToUsers(med.show_to_users);
     setFormShowToShops(med.show_to_shops);
     setFormShowToVendors(med.show_to_vendors);
+    setFormReorderLevel(med.reorder_level ?? 10);
   };
 
   const handleCreateSubmit = (e: React.FormEvent) => {
@@ -198,6 +201,7 @@ export default function Medicines() {
       show_to_users: formShowToUsers,
       show_to_shops: formShowToShops,
       show_to_vendors: formShowToVendors,
+      reorder_level: Number(formReorderLevel),
     };
 
     const loadToast = toast.loading("Onboarding new medicine...");
@@ -232,6 +236,7 @@ export default function Medicines() {
       show_to_users: formShowToUsers,
       show_to_shops: formShowToShops,
       show_to_vendors: formShowToVendors,
+      reorder_level: Number(formReorderLevel),
     };
 
     const loadToast = toast.loading("Updating medicine details...");
@@ -592,14 +597,26 @@ export default function Medicines() {
                 </div>
 
                 <div className="form-group-custom">
-                  <label>Thumbnail Image URL</label>
+                  <label>Reorder Level (Alert Threshold)</label>
                   <input
-                    type="url"
-                    placeholder="https://example.com/image.jpg"
-                    value={formThumbnail}
-                    onChange={(e) => setFormThumbnail(e.target.value)}
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 10"
+                    value={formReorderLevel}
+                    onChange={(e) => setFormReorderLevel(Number(e.target.value))}
+                    required
                   />
                 </div>
+              </div>
+
+              <div className="form-group-custom" style={{ marginTop: "1rem" }}>
+                <label>Thumbnail Image URL</label>
+                <input
+                  type="url"
+                  placeholder="https://example.com/image.jpg"
+                  value={formThumbnail}
+                  onChange={(e) => setFormThumbnail(e.target.value)}
+                />
               </div>
 
               <div className="checkbox-group-custom">
@@ -782,14 +799,26 @@ export default function Medicines() {
                 </div>
 
                 <div className="form-group-custom">
-                  <label>Thumbnail Image URL</label>
+                  <label>Reorder Level (Alert Threshold)</label>
                   <input
-                    type="url"
-                    placeholder="https://example.com/image.jpg"
-                    value={formThumbnail}
-                    onChange={(e) => setFormThumbnail(e.target.value)}
+                    type="number"
+                    min="0"
+                    placeholder="e.g. 10"
+                    value={formReorderLevel}
+                    onChange={(e) => setFormReorderLevel(Number(e.target.value))}
+                    required
                   />
                 </div>
+              </div>
+
+              <div className="form-group-custom" style={{ marginTop: "1rem" }}>
+                <label>Thumbnail Image URL</label>
+                <input
+                  type="url"
+                  placeholder="https://example.com/image.jpg"
+                  value={formThumbnail}
+                  onChange={(e) => setFormThumbnail(e.target.value)}
+                />
               </div>
 
               <div className="checkbox-group-custom">

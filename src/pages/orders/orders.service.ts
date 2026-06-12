@@ -121,3 +121,20 @@ export const cancelOrder = async (
   }
   throw new Error("Failed to cancel order");
 };
+
+// 🔹 Review Prescription: PATCH /api/orders/:id/review-prescription (Admin)
+export const reviewPrescription = async (
+  id: number,
+  items: { id: number; quantity: number }[],
+  shopId?: number
+): Promise<{ message: string; data: Order }> => {
+  const payload: any = { items };
+  if (shopId) payload.shop_id = shopId;
+
+  const res = await API.patch(`/orders/${id}/review-prescription`, payload);
+  if (res.data && res.data.success) {
+    return res.data;
+  }
+  throw new Error("Failed to review prescription");
+};
+

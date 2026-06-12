@@ -11,6 +11,7 @@ import Medicines from "./pages/medicines/Medicines";
 import Orders from "./pages/orders/Orders";
 import Settlements from "./pages/settlements/Settlements";
 import Stores from "./pages/stores/Stores";
+import Inventory from "./pages/inventory/Inventory";
 import AdminLayout from "./layouts/AdminLayout";
 import { isAuthenticated, hasAccess, logoutUser, getPrimaryLandingPath, getCurrentUser } from "./services/auth";
 import { FaClinicMedical, FaExclamationTriangle, FaSignOutAlt, FaStore } from "react-icons/fa";
@@ -110,6 +111,7 @@ export default function App() {
                   <Route path="/orders" element={<Orders />} />
                   <Route path="/pharmacy-settlements" element={<Settlements />} />
                   <Route path="/stores" element={<Stores />} />
+                  <Route path="/inventory" element={<Inventory />} />
                   <Route path="/vendors" element={
                     <OperationalPlaceholder
                       icon={<FaClinicMedical />}

@@ -8,7 +8,8 @@ import {
   FaClinicMedical,
   FaUserShield,
   FaStore,
-  FaMoneyBillWave
+  FaMoneyBillWave,
+  FaWarehouse
 } from "react-icons/fa";
 
 export const menus = [
@@ -47,6 +48,11 @@ export const menus = [
     name: "Stores",
     icon: <FaStore />,
     path: "/stores",
+  },
+  {
+    name: "Inventory",
+    icon: <FaWarehouse />,
+    path: "/inventory",
   },
   {
     name: "Users",

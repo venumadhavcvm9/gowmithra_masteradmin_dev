@@ -7,8 +7,11 @@ import {
   updateOrderStatus,
   updatePaymentStatus,
   cancelOrder,
+  reviewPrescription,
 } from "./orders.service";
 import type { Order, OrderStatus, PaymentStatus, OrderItem } from "./orders.service";
+import { getMedicines } from "../medicines/medicines.service";
+import type { Medicine } from "../medicines/medicines.service";
 import { getCurrentUser } from "../../services/auth";
 import {
   FaClipboardList,
@@ -63,6 +66,12 @@ export default function Orders() {
   const [cancelReasonInput, setCancelReasonInput] = useState("");
   const [nextPaymentStatus, setNextPaymentStatus] = useState<PaymentStatus | "">("");
 
+  // Prescription Review Builder states
+  const [prescriptionItems, setPrescriptionItems] = useState<{ medicine: Medicine; quantity: number }[]>([]);
+  const [medicineSearchText, setMedicineSearchText] = useState("");
+  const [medicineSearchResults, setMedicineSearchResults] = useState<Medicine[]>([]);
+  const [isSearchingMedicines, setIsSearchingMedicines] = useState(false);
+
   const currentUser = getCurrentUser();
   const isAdmin = currentUser?.role === "ADMIN";
   const isStock = currentUser?.role === "STOCK";
@@ -71,6 +80,24 @@ export default function Orders() {
   useEffect(() => {
     loadOrders();
   }, [page, orderStatusFilter, paymentStatusFilter, shopIdFilter]);
+
+  useEffect(() => {
+    if (!medicineSearchText) {
+      setMedicineSearchResults([]);
+      return;
+    }
+    const delayDebounceFn = setTimeout(() => {
+      setIsSearchingMedicines(true);
+      getMedicines({ page: 1, limit: 10, search: medicineSearchText })
+        .then((res) => {
+          setMedicineSearchResults(res.data);
+        })
+        .catch(err => console.error(err))
+        .finally(() => setIsSearchingMedicines(false));
+    }, 400);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [medicineSearchText]);
 
   const downloadPDF = async () => {
     const element = document.getElementById("invoice-print-area");
@@ -125,6 +152,59 @@ export default function Orders() {
     setShopIdInput(order.shop_id ? order.shop_id.toString() : "");
     setCancelReasonInput("");
     setNextPaymentStatus("");
+    setPrescriptionItems([]);
+    setMedicineSearchText("");
+    setMedicineSearchResults([]);
+  };
+
+  const handleAddMedicine = (medicine: Medicine) => {
+    setPrescriptionItems(prev => {
+      const existing = prev.find(item => item.medicine.id === medicine.id);
+      if (existing) {
+        return prev.map(item => item.medicine.id === medicine.id ? { ...item, quantity: item.quantity + 1 } : item);
+      }
+      return [...prev, { medicine, quantity: 1 }];
+    });
+    setMedicineSearchText("");
+    setMedicineSearchResults([]);
+  };
+
+  const handleUpdateMedicineQty = (id: number, qty: number) => {
+    if (qty < 1) return;
+    setPrescriptionItems(prev => prev.map(item => item.medicine.id === id ? { ...item, quantity: qty } : item));
+  };
+
+  const handleRemoveMedicine = (id: number) => {
+    setPrescriptionItems(prev => prev.filter(item => item.medicine.id !== id));
+  };
+
+  const handleReviewPrescriptionSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedOrder) return;
+    if (prescriptionItems.length === 0) {
+      toast.error("Please add at least one medicine to the prescription.");
+      return;
+    }
+    
+    const itemsPayload = prescriptionItems.map(item => ({
+      id: item.medicine.id,
+      quantity: item.quantity
+    }));
+    
+    const shopIdNum = shopIdInput ? Number(shopIdInput) : undefined;
+    
+    const loadToast = toast.loading("Reviewing and accepting prescription...");
+    reviewPrescription(selectedOrder.id, itemsPayload, shopIdNum)
+      .then(() => {
+        toast.success("Prescription reviewed and accepted successfully!", { id: loadToast });
+        setSelectedOrder(null);
+        loadOrders();
+      })
+      .catch((err) => {
+        console.error(err);
+        const errMsg = err.response?.data?.message || "Failed to review prescription.";
+        toast.error(errMsg, { id: loadToast });
+      });
   };
 
   const handleUpdateStatusSubmit = (e: React.FormEvent) => {
@@ -595,8 +675,100 @@ export default function Orders() {
               </div>
             )}
 
+            {/* Pharmacist Review Builder */}
+            {selectedOrder.prescription_image && selectedOrder.order_status === "PENDING" && parseOrderItems(selectedOrder.items).length === 0 && (
+              <div className="pharmacist-review-panel transition-block" style={{ marginTop: "15px" }}>
+                <span className="transition-title">Pharmacist Review: Build Order</span>
+                <div className="medicine-search-container" style={{ position: "relative", marginBottom: "15px" }}>
+                  <input
+                    type="text"
+                    placeholder="Search medicine to add..."
+                    value={medicineSearchText}
+                    onChange={(e) => setMedicineSearchText(e.target.value)}
+                    className="medicine-search-input"
+                    style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid var(--border-color)" }}
+                  />
+                  {isSearchingMedicines && <div className="search-loader" style={{ fontSize: "12px", color: "var(--text-muted)", marginTop: "4px" }}>Searching...</div>}
+                  
+                  {medicineSearchResults.length > 0 && (
+                    <ul className="medicine-search-results" style={{ position: "absolute", top: "100%", left: 0, right: 0, background: "#fff", border: "1px solid var(--border-color)", borderRadius: "6px", maxHeight: "200px", overflowY: "auto", zIndex: 10, listStyle: "none", padding: 0, margin: "4px 0 0 0", boxShadow: "0 4px 12px rgba(0,0,0,0.1)" }}>
+                      {medicineSearchResults.map(med => (
+                        <li key={med.id} onClick={() => handleAddMedicine(med)} style={{ padding: "10px", borderBottom: "1px solid var(--border-color)", cursor: "pointer", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                          <div>
+                            <div style={{ fontWeight: 600, fontSize: "13px" }}>{med.name}</div>
+                            <div style={{ fontSize: "11px", color: "var(--text-muted)" }}>{med.category}</div>
+                          </div>
+                          <span style={{ fontWeight: 600, color: "var(--primary)" }}>₹{Number(med.price).toFixed(2)}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+                
+                {prescriptionItems.length > 0 && (
+                  <div className="prescription-items-builder">
+                    <table className="order-items-list-table" style={{ marginBottom: "15px" }}>
+                      <thead>
+                        <tr>
+                          <th>Medicine</th>
+                          <th>Price</th>
+                          <th>Qty</th>
+                          <th>Subtotal</th>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {prescriptionItems.map(item => (
+                          <tr key={item.medicine.id}>
+                            <td>{item.medicine.name}</td>
+                            <td>₹{Number(item.medicine.price).toFixed(2)}</td>
+                            <td>
+                              <input 
+                                type="number" 
+                                min="1" 
+                                value={item.quantity} 
+                                onChange={(e) => handleUpdateMedicineQty(item.medicine.id, parseInt(e.target.value) || 1)}
+                                style={{ width: "50px", padding: "4px", borderRadius: "4px", border: "1px solid #ccc" }}
+                              />
+                            </td>
+                            <td>₹{(Number(item.medicine.price) * item.quantity).toFixed(2)}</td>
+                            <td>
+                              <button type="button" onClick={() => handleRemoveMedicine(item.medicine.id)} style={{ background: "transparent", border: "none", color: "var(--accent-red)", cursor: "pointer" }}>
+                                <FaTimes />
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="review-totals" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px", background: "rgba(0,0,0,0.02)", borderRadius: "6px" }}>
+                      <strong>Total Draft Amount: </strong>
+                      <span style={{ fontSize: "16px", color: "var(--primary)", fontWeight: "bold" }}>
+                        ₹{prescriptionItems.reduce((acc, item) => acc + (Number(item.medicine.price) * item.quantity), 0).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                )}
+                
+                <form onSubmit={handleReviewPrescriptionSubmit} style={{ marginTop: "15px" }}>
+                  <div className="form-group-custom" style={{ marginBottom: "15px" }}>
+                    <label>Allocate Depot / Shop ID (Numeric, e.g. 2)</label>
+                    <input
+                      type="number"
+                      placeholder="Enter target shop ID (Optional)"
+                      value={shopIdInput}
+                      onChange={(e) => setShopIdInput(e.target.value)}
+                    />
+                  </div>
+                  <button type="submit" className="save-btn" style={{ background: "var(--primary)", width: "100%", justifyContent: "center", height: "38px" }}>
+                    <FaCheck /> Approve Prescription & Generate Order
+                  </button>
+                </form>
+              </div>
+            )}
+
             {/* Order lifecycle status update form */}
-            {canUpdateStatus && (
+            {canUpdateStatus && !(selectedOrder.prescription_image && selectedOrder.order_status === "PENDING" && parseOrderItems(selectedOrder.items).length === 0) && (
               <form onSubmit={handleUpdateStatusSubmit} className="transition-block">
                 <span className="transition-title">Update Order Logistics State</span>
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>

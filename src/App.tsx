@@ -13,7 +13,7 @@ import Settlements from "./pages/settlements/Settlements";
 import Stores from "./pages/stores/Stores";
 import AdminLayout from "./layouts/AdminLayout";
 import { isAuthenticated, hasAccess, logoutUser, getPrimaryLandingPath, getCurrentUser } from "./services/auth";
-import { FaClinicMedical, FaExclamationTriangle, FaSignOutAlt, FaStore } from "react-icons/fa";
+import { FaClinicMedical, FaExclamationTriangle, FaSignOutAlt } from "react-icons/fa";
 import "./App.css";
 
 // ─── Placeholder (unimplemented pages) ───────────────────────────

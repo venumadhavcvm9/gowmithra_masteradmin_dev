@@ -14,7 +14,7 @@ import Stores from "./pages/stores/Stores";
 import Inventory from "./pages/inventory/Inventory";
 import AdminLayout from "./layouts/AdminLayout";
 import { isAuthenticated, hasAccess, logoutUser, getPrimaryLandingPath, getCurrentUser } from "./services/auth";
-import { FaClinicMedical, FaExclamationTriangle, FaSignOutAlt, FaStore } from "react-icons/fa";
+import { FaClinicMedical, FaExclamationTriangle, FaSignOutAlt } from "react-icons/fa";
 import "./App.css";
 
 // ─── Placeholder (unimplemented pages) ───────────────────────────

@@ -5,6 +5,7 @@ import { FaMoneyBillWave, FaCheck, FaTimes, FaEye } from "react-icons/fa";
 
 interface Settlement {
   id: string;
+  shopName?: string;
   saleTitle: string;
   amount: number;
   receiptUrl: string;
@@ -66,7 +67,7 @@ export default function Settlements() {
           <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
             <thead>
               <tr style={{ borderBottom: "2px solid #f1f5f9", color: "#64748b", fontSize: "14px", textTransform: "uppercase" }}>
-                <th style={{ padding: "12px" }}>Time & ID</th>
+                <th style={{ padding: "12px" }}>Time, ID & Shop</th>
                 <th style={{ padding: "12px" }}>Amount</th>
                 <th style={{ padding: "12px" }}>Reason</th>
                 <th style={{ padding: "12px" }}>Status</th>
@@ -80,6 +81,11 @@ export default function Settlements() {
                   <td style={{ padding: "16px 12px" }}>
                     <div style={{ fontWeight: "bold", color: "#334155" }}>{s.timestamp}</div>
                     <div style={{ fontSize: "12px", color: "#94a3b8" }}>{s.id}</div>
+                    {s.shopName && (
+                      <div style={{ fontSize: "13px", color: "#0ea5e9", marginTop: "4px", fontWeight: "600" }}>
+                        {s.shopName}
+                      </div>
+                    )}
                   </td>
                   <td style={{ padding: "16px 12px", fontWeight: "bold", color: "#10b981" }}>
                     ₹{Number(s.amount).toFixed(2)}

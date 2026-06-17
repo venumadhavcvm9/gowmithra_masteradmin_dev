@@ -107,8 +107,6 @@ export default function Medicines() {
   const [formSubCategory, setFormSubCategory] = useState("");
   const [formType, setFormType] = useState<MedicineType>("SUPPLEMENT");
   const [formShowToUsers, setFormShowToUsers] = useState(true);
-  const [formShowToShops, setFormShowToShops] = useState(true);
-  const [formShowToVendors, setFormShowToVendors] = useState(true);
   const [formReorderLevel, setFormReorderLevel] = useState(10);
 
   // Debounce search
@@ -183,8 +181,6 @@ export default function Medicines() {
     setFormSubCategory("");
     setFormType("SUPPLEMENT");
     setFormShowToUsers(true);
-    setFormShowToShops(true);
-    setFormShowToVendors(true);
     setFormReorderLevel(10);
     setShowAddModal(true);
   };
@@ -203,8 +199,6 @@ export default function Medicines() {
     setFormSubCategory(med.sub_category);
     setFormType(med.type);
     setFormShowToUsers(med.show_to_users);
-    setFormShowToShops(med.show_to_shops);
-    setFormShowToVendors(med.show_to_vendors);
     setFormReorderLevel(med.reorder_level ?? 10);
   };
 
@@ -224,8 +218,6 @@ export default function Medicines() {
     payload.append("sub_category", formSubCategory);
     payload.append("type", formType);
     payload.append("show_to_users", String(formShowToUsers));
-    payload.append("show_to_shops", String(formShowToShops));
-    payload.append("show_to_vendors", String(formShowToVendors));
     payload.append("reorder_level", formReorderLevel.toString());
 
     if (formThumbnail instanceof File) {
@@ -263,8 +255,6 @@ export default function Medicines() {
     payload.append("sub_category", formSubCategory);
     payload.append("type", formType);
     payload.append("show_to_users", String(formShowToUsers));
-    payload.append("show_to_shops", String(formShowToShops));
-    payload.append("show_to_vendors", String(formShowToVendors));
     payload.append("reorder_level", formReorderLevel.toString());
 
     if (formThumbnail instanceof File) {
@@ -740,23 +730,7 @@ export default function Medicines() {
                     Show to Farmers
                   </label>
 
-                  <label className="checkbox-item">
-                    <input
-                      type="checkbox"
-                      checked={formShowToShops}
-                      onChange={(e) => setFormShowToShops(e.target.checked)}
-                    />
-                    Show to Shops
-                  </label>
 
-                  <label className="checkbox-item">
-                    <input
-                      type="checkbox"
-                      checked={formShowToVendors}
-                      onChange={(e) => setFormShowToVendors(e.target.checked)}
-                    />
-                    Show to Vendors
-                  </label>
                 </div>
               </div>
 
@@ -1000,23 +974,7 @@ export default function Medicines() {
                     Show to Farmers
                   </label>
 
-                  <label className="checkbox-item">
-                    <input
-                      type="checkbox"
-                      checked={formShowToShops}
-                      onChange={(e) => setFormShowToShops(e.target.checked)}
-                    />
-                    Show to Shops
-                  </label>
 
-                  <label className="checkbox-item">
-                    <input
-                      type="checkbox"
-                      checked={formShowToVendors}
-                      onChange={(e) => setFormShowToVendors(e.target.checked)}
-                    />
-                    Show to Vendors
-                  </label>
                 </div>
               </div>
 

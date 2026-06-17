@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { toast, Toaster } from "react-hot-toast";
 import api from "../../services/api";
 import {
@@ -19,6 +20,63 @@ import {
 import type { InventoryStock, InventoryLedger } from "./inventory.service";
 import { getCurrentUser } from "../../services/auth";
 import "./Inventory.css";
+
+const MedicineSearchSelect = ({ medicines, name }: { medicines: any[], name: string }) => {
+  const [search, setSearch] = useState("");
+  const [isOpen, setIsOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState<number | "">("");
+
+  const filtered = medicines.filter(m => 
+    (m.name?.toLowerCase() || "").includes(search.toLowerCase()) || 
+    (m.medicine_id?.toString() || "").includes(search)
+  );
+
+  return (
+    <div style={{ position: 'relative' }}>
+      <input type="hidden" name={name} value={selectedId} required />
+      <input 
+        type="text" 
+        placeholder="Search by ID or name..." 
+        value={search}
+        onChange={(e) => { 
+          setSearch(e.target.value); 
+          setIsOpen(true); 
+          setSelectedId(""); 
+        }}
+        onFocus={() => setIsOpen(true)}
+        onBlur={() => setTimeout(() => setIsOpen(false), 200)}
+        required={!selectedId}
+        style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#333', outline: 'none' }}
+        autoComplete="off"
+      />
+      {isOpen && (
+        <ul style={{ 
+          position: 'absolute', top: '100%', left: 0, right: 0, 
+          background: '#ffffff', border: '1px solid #ddd', 
+          zIndex: 9999, maxHeight: '250px', overflowY: 'auto', listStyle: 'none', 
+          padding: 0, margin: '4px 0 0 0', borderRadius: '6px', boxShadow: '0 8px 16px rgba(0,0,0,0.15)' 
+        }}>
+          {filtered.map(m => (
+            <li 
+              key={m.id} 
+              style={{ padding: '10px 12px', cursor: 'pointer', borderBottom: '1px solid #f0f0f0', color: '#333', transition: 'background 0.2s' }}
+              onMouseEnter={(e) => e.currentTarget.style.background = '#f4f6f8'}
+              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+              onMouseDown={() => { 
+                setSelectedId(m.id);
+                setSearch(`${m.medicine_id} - ${m.name}`);
+                setIsOpen(false);
+              }}
+            >
+              <strong>{m.medicine_id}</strong> - {m.name}
+            </li>
+          ))}
+          {filtered.length === 0 && <li style={{ padding: '10px 12px', color: '#888' }}>No matches found</li>}
+        </ul>
+      )}
+    </div>
+  );
+};
 
 const Inventory: React.FC = () => {
   const [activeTab, setActiveTab] = useState<"AGENCY" | "SHOP" | "LEDGER" | "ALERTS">("AGENCY");
@@ -42,7 +100,7 @@ const Inventory: React.FC = () => {
 
   // Auth Context
   const currentUser = getCurrentUser();
-  const isAdmin = currentUser?.role === "ADMIN" || currentUser?.role === "MASTER_ADMIN";
+  const isAdmin = currentUser?.role === "ADMIN" || (currentUser?.role as string) === "MASTER_ADMIN";
 
   useEffect(() => {
     loadData();
@@ -307,9 +365,17 @@ const Inventory: React.FC = () => {
                     <td>{stock.batch_number}</td>
                     <td>{stock.expiry_date}</td>
                     <td>
-                      <span className={`qty-badge ${stock.quantity < 10 ? 'low-stock' : ''}`}>
-                        {stock.quantity}
-                      </span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span className={`qty-badge ${stock.quantity < 10 ? 'low-stock' : ''}`}>
+                          {stock.quantity}
+                        </span>
+                        <Link 
+                          to={`/inventory/view-details/${stock.medicine_id}`} 
+                          style={{ fontSize: '0.85rem', color: 'var(--accent-teal)', textDecoration: 'underline', fontWeight: '500' }}
+                        >
+                          View Details
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -401,14 +467,7 @@ const Inventory: React.FC = () => {
             <form onSubmit={handleInwardSubmit}>
               <div className="form-group">
                 <label>Medicine</label>
-                <select name="medicine_id" required>
-                  <option value="">Select a medicine...</option>
-                  {medicines.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.medicine_id} - {m.name}
-                    </option>
-                  ))}
-                </select>
+                <MedicineSearchSelect medicines={medicines} name="medicine_id" />
               </div>
               <div className="form-group">
                 <label>Quantity</label>
@@ -442,18 +501,11 @@ const Inventory: React.FC = () => {
             <form onSubmit={handleTransferSubmit}>
               <div className="form-group">
                 <label>Medicine</label>
-                <select name="medicine_id" required>
-                  <option value="">Select a medicine...</option>
-                  {medicines.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.medicine_id} - {m.name}
-                    </option>
-                  ))}
-                </select>
+                <MedicineSearchSelect medicines={medicines} name="medicine_id" />
               </div>
               <div className="form-group">
                 <label>Target Shop</label>
-                <select name="to_shop_id" required>
+                <select name="to_shop_id" required style={{ width: '100%', padding: '10px', border: '1px solid #ccc', borderRadius: '6px', background: '#fff', color: '#333', outline: 'none' }}>
                   <option value="">Select a shop...</option>
                   {shops.map((s) => (
                     <option key={s.id} value={s.id}>
@@ -482,6 +534,7 @@ const Inventory: React.FC = () => {
           </div>
         </div>
       )}
+
 
     </div>
   );

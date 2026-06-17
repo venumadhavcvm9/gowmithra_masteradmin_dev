@@ -80,6 +80,16 @@ export default function Orders() {
   const isAdmin = currentUser?.role === "ADMIN";
   const isStock = currentUser?.role === "STOCK";
   const canUpdateStatus = isAdmin || isStock;
+  const getPrescriptionImages = (imageStr: string | undefined): string[] => {
+    if (!imageStr) return [];
+    try {
+      const parsed = JSON.parse(imageStr);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      return [imageStr];
+    }
+    return [];
+  };
 
   useEffect(() => {
     getShops().then(res => setShops(res.data)).catch(console.error);
@@ -670,30 +680,26 @@ export default function Orders() {
             </div>
 
             {/* Prescription Doc Verification */}
-            {selectedOrder.prescription_image && (
+            {selectedOrder.prescription_image && getPrescriptionImages(selectedOrder.prescription_image).length > 0 && (
               <div className="prescription-preview-box">
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
-                  <span className="prescription-preview-title" style={{ margin: 0 }}>Prescription File Attached</span>
-                  <a 
-                    href={selectedOrder.prescription_image} 
-                    download={`Prescription_${selectedOrder.order_id}.jpg`}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{ display: "flex", alignItems: "center", gap: "6px", background: "var(--accent-blue)", color: "white", padding: "6px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "bold", textDecoration: "none", transition: "background 0.2s", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}
-                  >
-                    <FaFileDownload /> Download
-                  </a>
+                <span className="prescription-preview-title">Prescription Files Attached</span>
+                <div style={{ display: "flex", gap: "10px", flexWrap: "wrap", marginTop: "10px" }}>
+                  {getPrescriptionImages(selectedOrder.prescription_image).map((imgSrc, idx) => (
+                    <a key={idx} href={imgSrc} target="_blank" rel="noopener noreferrer" style={{ display: "block", flexShrink: 0 }}>
+                      <img
+                        src={imgSrc}
+                        alt={`Prescription Page ${idx + 1}`}
+                        style={{ height: "120px", width: "120px", objectFit: "cover", borderRadius: "8px", border: "1px solid var(--border-color)", cursor: "pointer", transition: "transform 0.2s" }}
+                        onMouseEnter={(e) => e.currentTarget.style.transform = "scale(1.05)"}
+                        onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
+                        onError={(e) => {
+                          (e.target as any).src =
+                            "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=500&q=80";
+                        }}
+                      />
+                    </a>
+                  ))}
                 </div>
-                <img
-                  src={selectedOrder.prescription_image}
-                  alt="Farmer prescription doc upload"
-                  className="prescription-img"
-                  onError={(e) => {
-                    // Fallback in case of broken mockup URL
-                    (e.target as any).src =
-                      "https://images.unsplash.com/photo-1576091160550-2173dba999ef?auto=format&fit=crop&w=500&q=80";
-                  }}
-                />
               </div>
             )}
 

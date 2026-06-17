@@ -37,7 +37,7 @@ const MEDICINE_TYPES: MedicineType[] = [
 const MEDICINE_CATEGORIES = [
   "Supplements",
   "First Aid",
-  "Feed additives",
+  "Feed Additives",
 ];
 
 const MEDICINE_SUB_CATEGORIES = [

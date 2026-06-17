@@ -70,7 +70,7 @@ export const getMedicines = async (params: {
 
 // 🔹 Create Medicine: POST /api/medicines (Stock role only)
 export const createMedicine = async (
-  data: Omit<Medicine, "id" | "is_active">
+  data: Omit<Medicine, "id" | "is_active"> | FormData
 ): Promise<{ data: Medicine }> => {
   const res = await API.post("/medicines", data);
   if (res.data) {
@@ -82,7 +82,7 @@ export const createMedicine = async (
 // 🔹 Update Medicine: PATCH /api/medicines/:id (Stock role only)
 export const updateMedicine = async (
   id: number,
-  data: Partial<Medicine>
+  data: Partial<Medicine> | FormData
 ): Promise<{ message: string }> => {
   const res = await API.patch(`/medicines/${id}`, data);
   if (res.data) {

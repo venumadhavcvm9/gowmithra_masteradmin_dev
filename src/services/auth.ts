@@ -16,21 +16,20 @@ const rolePermissions: Record<string, string[]> = {
   "/area-doctors": ["ADMIN", "MARKETING"],
   "/medicines": ["ADMIN", "STOCK"],
   "/orders": ["ADMIN", "SALES"],
-  "/vendors": ["ADMIN", "STOCK"]
+  "/vendors": ["ADMIN"],
+  "/pharmacy-settlements": ["ADMIN", "SALES"],
+  "/stores": ["ADMIN"],
+  "/inventory": ["ADMIN", "STOCK"]
 };
 
 // 🔹 Login Operation: Cache details
-export const loginUser = (user: AuthUser, token?: string) => {
+export const loginUser = (user: AuthUser) => {
   localStorage.setItem("user", JSON.stringify(user));
-  if (token) {
-    localStorage.setItem("token", token);
-  }
 };
 
 // 🔹 Logout Operation: Clear cache
 export const logoutUser = () => {
   localStorage.removeItem("user");
-  localStorage.removeItem("token");
 };
 
 // 🔹 Check Authentication State

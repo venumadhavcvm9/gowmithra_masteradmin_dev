@@ -8,8 +8,9 @@ import {
   updatePaymentStatus,
   cancelOrder,
   reviewPrescription,
+  getShops,
 } from "./orders.service";
-import type { Order, OrderStatus, PaymentStatus, OrderItem } from "./orders.service";
+import type { Order, OrderStatus, PaymentStatus, OrderItem, Shop } from "./orders.service";
 import { getMedicines } from "../medicines/medicines.service";
 import type { Medicine } from "../medicines/medicines.service";
 import { getCurrentUser } from "../../services/auth";
@@ -65,17 +66,24 @@ export default function Orders() {
   const [shopIdInput, setShopIdInput] = useState("");
   const [cancelReasonInput, setCancelReasonInput] = useState("");
   const [nextPaymentStatus, setNextPaymentStatus] = useState<PaymentStatus | "">("");
+  const [nextPaymentMode, setNextPaymentMode] = useState<"COD" | "ONLINE" | "">("");
 
   // Prescription Review Builder states
   const [prescriptionItems, setPrescriptionItems] = useState<{ medicine: Medicine; quantity: number }[]>([]);
   const [medicineSearchText, setMedicineSearchText] = useState("");
   const [medicineSearchResults, setMedicineSearchResults] = useState<Medicine[]>([]);
   const [isSearchingMedicines, setIsSearchingMedicines] = useState(false);
+  
+  const [shops, setShops] = useState<Shop[]>([]);
 
   const currentUser = getCurrentUser();
   const isAdmin = currentUser?.role === "ADMIN";
   const isStock = currentUser?.role === "STOCK";
   const canUpdateStatus = isAdmin || isStock;
+
+  useEffect(() => {
+    getShops().then(res => setShops(res.data)).catch(console.error);
+  }, []);
 
   useEffect(() => {
     loadOrders();
@@ -152,6 +160,7 @@ export default function Orders() {
     setShopIdInput(order.shop_id ? order.shop_id.toString() : "");
     setCancelReasonInput("");
     setNextPaymentStatus("");
+    setNextPaymentMode(order.payment_mode || "COD");
     setPrescriptionItems([]);
     setMedicineSearchText("");
     setMedicineSearchResults([]);
@@ -247,7 +256,7 @@ export default function Orders() {
     if (!selectedOrder || !nextPaymentStatus || !isAdmin) return;
 
     const loadToast = toast.loading("Updating payment status...");
-    updatePaymentStatus(selectedOrder.id, nextPaymentStatus as PaymentStatus)
+    updatePaymentStatus(selectedOrder.id, nextPaymentStatus as PaymentStatus, nextPaymentMode || undefined)
       .then(() => {
         toast.success("Payment status updated successfully!", { id: loadToast });
         setSelectedOrder(null);
@@ -468,8 +477,10 @@ export default function Orders() {
                           </span>
                         </td>
                         <td>
-                          <strong style={{ color: "var(--text-muted)" }}>
-                            {order.shop_id ? `SH-${order.shop_id}` : "Not Assigned"}
+                          <strong style={{ color: "var(--text-muted)", fontSize: "12px" }}>
+                            {order.shop_id 
+                              ? shops.find(s => s.id === order.shop_id)?.name || `Shop ID: ${order.shop_id}` 
+                              : "Not Assigned"}
                           </strong>
                         </td>
                       </tr>
@@ -661,7 +672,18 @@ export default function Orders() {
             {/* Prescription Doc Verification */}
             {selectedOrder.prescription_image && (
               <div className="prescription-preview-box">
-                <span className="prescription-preview-title">Prescription File Attached</span>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px" }}>
+                  <span className="prescription-preview-title" style={{ margin: 0 }}>Prescription File Attached</span>
+                  <a 
+                    href={selectedOrder.prescription_image} 
+                    download={`Prescription_${selectedOrder.order_id}.jpg`}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{ display: "flex", alignItems: "center", gap: "6px", background: "var(--accent-blue)", color: "white", padding: "6px 12px", borderRadius: "6px", fontSize: "12px", fontWeight: "bold", textDecoration: "none", transition: "background 0.2s", boxShadow: "0 2px 4px rgba(0,0,0,0.1)" }}
+                  >
+                    <FaFileDownload /> Download
+                  </a>
+                </div>
                 <img
                   src={selectedOrder.prescription_image}
                   alt="Farmer prescription doc upload"
@@ -752,13 +774,17 @@ export default function Orders() {
                 
                 <form onSubmit={handleReviewPrescriptionSubmit} style={{ marginTop: "15px" }}>
                   <div className="form-group-custom" style={{ marginBottom: "15px" }}>
-                    <label>Allocate Depot / Shop ID (Numeric, e.g. 2)</label>
-                    <input
-                      type="number"
-                      placeholder="Enter target shop ID (Optional)"
+                    <label>Allocate Depot / Shop</label>
+                    <select
                       value={shopIdInput}
                       onChange={(e) => setShopIdInput(e.target.value)}
-                    />
+                      style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid var(--border-color)", backgroundColor: "var(--card-bg)" }}
+                    >
+                      <option value="">Select Target Shop (Optional)</option>
+                      {shops.map(shop => (
+                        <option key={shop.id} value={shop.id}>{shop.name} (ID: {shop.shop_id || shop.id})</option>
+                      ))}
+                    </select>
                   </div>
                   <button type="submit" className="save-btn" style={{ background: "var(--primary)", width: "100%", justifyContent: "center", height: "38px" }}>
                     <FaCheck /> Approve Prescription & Generate Order
@@ -798,14 +824,18 @@ export default function Orders() {
 
                   {nextOrderStatus === "ACCEPTED" && (
                     <div className="form-group-custom" style={{ marginTop: "6px" }}>
-                      <label>Allocate Depot / Shop ID (Numeric, e.g. 2)</label>
-                      <input
-                        type="number"
-                        placeholder="Enter target shop ID (e.g. 2)"
+                      <label>Allocate Depot / Shop</label>
+                      <select
                         value={shopIdInput}
                         onChange={(e) => setShopIdInput(e.target.value)}
                         required
-                      />
+                        style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid var(--border-color)", backgroundColor: "var(--card-bg)" }}
+                      >
+                        <option value="">Select Target Shop</option>
+                        {shops.map(shop => (
+                          <option key={shop.id} value={shop.id}>{shop.name} (ID: {shop.shop_id || shop.id})</option>
+                        ))}
+                      </select>
                     </div>
                   )}
 
@@ -836,12 +866,12 @@ export default function Orders() {
             )}
 
             {/* Admin only payment update form */}
-            {isAdmin && (
+            {isAdmin && selectedOrder.order_status !== "PENDING" && selectedOrder.order_status !== "CANCELLED" && (
               <form onSubmit={handleUpdatePaymentSubmit} className="transition-block payment-block">
                 <span className="transition-title">Admin: Update Billing / Payment Status</span>
                 <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
                   <div className="transition-options-row">
-                    {["PENDING", "PAID", "FAILED", "REFUND_PENDING"].map((status) => (
+                    {["PAID"].map((status) => (
                       <button
                         key={status}
                         type="button"
@@ -855,7 +885,21 @@ export default function Orders() {
                     ))}
                   </div>
 
-                  {nextPaymentStatus && nextPaymentStatus !== selectedOrder.payment_status && (
+                  {nextPaymentStatus === "PAID" && (
+                    <div className="form-group-custom" style={{ marginTop: "10px" }}>
+                      <label>Payment Method</label>
+                      <select
+                        value={nextPaymentMode}
+                        onChange={(e) => setNextPaymentMode(e.target.value as any)}
+                        style={{ width: "100%", padding: "10px", borderRadius: "6px", border: "1px solid var(--border-color)", backgroundColor: "var(--card-bg)" }}
+                      >
+                        <option value="COD">Cash on Delivery (COD)</option>
+                        <option value="ONLINE">Online Payment</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {nextPaymentStatus && (nextPaymentStatus !== selectedOrder.payment_status || nextPaymentMode !== (selectedOrder.payment_mode || "COD")) && (
                     <button
                       type="submit"
                       className="save-btn"

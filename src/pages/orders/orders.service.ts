@@ -101,9 +101,13 @@ export const updateOrderStatus = async (
 // 🔹 Update Payment Status: PATCH /api/orders/:id/payment (Admin only)
 export const updatePaymentStatus = async (
   id: number,
-  status: PaymentStatus
+  status: PaymentStatus,
+  payment_mode?: "COD" | "ONLINE"
 ): Promise<{ message: string; data: Order }> => {
-  const res = await API.patch(`/orders/${id}/payment`, { status });
+  const payload: any = { status };
+  if (payment_mode) payload.payment_mode = payment_mode;
+
+  const res = await API.patch(`/orders/${id}/payment`, payload);
   if (res.data && res.data.success) {
     return res.data;
   }
@@ -122,7 +126,6 @@ export const cancelOrder = async (
   throw new Error("Failed to cancel order");
 };
 
-// 🔹 Review Prescription: PATCH /api/orders/:id/review-prescription (Admin)
 export const reviewPrescription = async (
   id: number,
   items: { id: number; quantity: number }[],
@@ -136,5 +139,20 @@ export const reviewPrescription = async (
     return res.data;
   }
   throw new Error("Failed to review prescription");
+};
+
+export interface Shop {
+  id: number;
+  name: string;
+  contact_number?: string;
+  shop_id?: string;
+}
+
+export const getShops = async (): Promise<{ data: Shop[] }> => {
+  const res = await API.get("/shops");
+  if (res.data && res.data.data) {
+    return { data: res.data.data };
+  }
+  throw new Error("Invalid API format received");
 };
 
